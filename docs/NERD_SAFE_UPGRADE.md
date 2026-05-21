@@ -55,6 +55,83 @@ curl -fsS http://127.0.0.1:8082/health
 
 After a separate approval, stop the legacy process, change `/root/.fcc/.env` `PORT` from `18082` to `8082`, and start `free-claude ui`. Keep `/root/free-claude-code` available for rollback.
 
+### Final Switch Checklist
+
+- Confirm the staged branch is clean and points at the reviewed commit:
+
+```bash
+git -C /root/nerd-claude-free-staging status --short --branch
+git -C /root/nerd-claude-free-staging log --oneline --decorate -8
+```
+
+- Confirm both services are healthy before any port move:
+
+```bash
+free-claude status
+curl -fsS http://127.0.0.1:18082/health
+curl -fsS http://127.0.0.1:8082/health
+```
+
+- Confirm the Admin UI is local-only and branded:
+
+```bash
+curl -fsS http://127.0.0.1:18082/admin | rg '\[NERD-CLAUDE\]-free|admin.js'
+curl -sS -o /tmp/nerd-admin-forbidden.txt -w '%{http_code}' http://127.0.0.1:18082/admin -H 'Origin: https://example.com'
+```
+
+Expected remote-origin response: `403`.
+
+- Confirm secret material is not committed:
+
+```bash
+git -C /root/nerd-claude-free-staging grep -n -E 'sk-or-v1-|nvapi-|wfr_|sk-[A-Za-z0-9]' HEAD || true
+```
+
+- Stop staged service before moving ports:
+
+```bash
+free-claude stop
+```
+
+- Stop legacy only after explicit approval and record how it was running:
+
+```bash
+systemctl status legacy-free-claude --no-pager --lines=20 || true
+ss -ltnp | rg ':8082' || true
+```
+
+- Move staged config to `8082`:
+
+```bash
+python3 - <<'PY'
+from pathlib import Path
+
+path = Path("/root/.fcc/.env")
+lines = []
+updated = False
+for line in path.read_text(encoding="utf-8").splitlines():
+    if line.startswith("PORT="):
+        lines.append('PORT="8082"')
+        updated = True
+    else:
+        lines.append(line)
+if not updated:
+    lines.append('PORT="8082"')
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+path.chmod(0o600)
+PY
+```
+
+- Start the promoted service and verify:
+
+```bash
+free-claude ui
+free-claude status
+curl -fsS http://127.0.0.1:8082/health
+```
+
+- Roll back by stopping staged, restoring `PORT="18082"` in `/root/.fcc/.env`, and starting the legacy service or original legacy command again.
+
 ## Rollback
 
 Use the legacy command:
