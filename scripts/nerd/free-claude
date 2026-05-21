@@ -6,6 +6,7 @@ LEGACY_DIR=${NERD_CLAUDE_LEGACY_DIR:-/root/free-claude-code}
 FCC_DIR=${NERD_CLAUDE_FCC_DIR:-/root/.fcc}
 ENV_FILE=${FCC_ENV_FILE:-$FCC_DIR/.env}
 PID_FILE=$FCC_DIR/free-claude-staging.pid
+PID_META_FILE=$FCC_DIR/free-claude-staging.pid.meta
 LOG_FILE=$FCC_DIR/logs/free-claude-staging.log
 
 usage() {
@@ -54,6 +55,45 @@ print(values.get(wanted, default))
 PY
 }
 
+effective_env_value() {
+  local key=$1
+  local default=${2:-}
+  python3 - "$key" "$default" "$STAGING_DIR/.env" "$FCC_DIR/.env" "$ENV_FILE" <<'PY'
+from pathlib import Path
+import os
+import sys
+
+wanted = sys.argv[1]
+default = sys.argv[2]
+values = {}
+seen = set()
+
+for raw_path in sys.argv[3:]:
+    if not raw_path:
+        continue
+    path = Path(raw_path)
+    marker = os.path.realpath(path)
+    if marker in seen:
+        continue
+    seen.add(marker)
+    if not path.is_file():
+        continue
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        values[key] = value
+
+print(values.get(wanted, default))
+PY
+}
+
 display_host() {
   local host=$1
   case "$host" in
@@ -68,11 +108,19 @@ display_host() {
   esac
 }
 
+configured_host() {
+  effective_env_value HOST "127.0.0.1"
+}
+
+configured_port() {
+  effective_env_value PORT "18082"
+}
+
 proxy_url() {
   local host
   local port
-  host=$(env_value "$ENV_FILE" HOST "127.0.0.1")
-  port=$(env_value "$ENV_FILE" PORT "18082")
+  host=$(configured_host)
+  port=$(configured_port)
   printf 'http://%s:%s' "$(display_host "$host")" "$port"
 }
 
@@ -129,9 +177,64 @@ pid_file_value() {
   return 1
 }
 
+pid_start_ticks() {
+  local pid=$1
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  [[ -r "/proc/$pid/stat" ]] || return 1
+  python3 - "$pid" <<'PY'
+from pathlib import Path
+import sys
+
+pid = sys.argv[1]
+stat = Path("/proc") / pid / "stat"
+data = stat.read_text(encoding="utf-8")
+end = data.rfind(")")
+if end == -1:
+    raise SystemExit(1)
+fields_after_comm = data[end + 2 :].split()
+# proc_pid_stat(5): fields after comm start at field 3, so starttime field 22
+# is index 19 in this list.
+if len(fields_after_comm) <= 19:
+    raise SystemExit(1)
+print(fields_after_comm[19])
+PY
+}
+
+managed_pid_env_matches() {
+  local pid=$1
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  [[ -r "/proc/$pid/environ" ]] || return 1
+  tr '\0' '\n' <"/proc/$pid/environ" 2>/dev/null | grep -Fxq 'NERD_CLAUDE_MANAGED=free-claude-staging'
+}
+
+pid_meta_value() {
+  local key=$1
+  [[ -f "$PID_META_FILE" ]] || return 1
+  python3 - "$PID_META_FILE" "$key" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+wanted = sys.argv[2]
+for raw_line in path.read_text(encoding="utf-8").splitlines():
+    line = raw_line.strip()
+    if not line or line.startswith("#") or "=" not in line:
+        continue
+    key, value = line.split("=", 1)
+    if key.strip() == wanted:
+        print(value.strip())
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+remove_pid_files() {
+  rm -f "$PID_FILE" "$PID_META_FILE"
+}
+
 is_managed_staged_pid() {
-  local pid
-  pid=$(pid_file_value) || return 1
+  local pid=$1
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
 
   if [[ ! -d "/proc/$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
     return 1
@@ -160,11 +263,25 @@ is_managed_staged_pid() {
     return 1
   fi
 
+  managed_pid_env_matches "$pid" || return 1
+
+  local meta_pid
+  local meta_start_ticks
+  local current_start_ticks
+  meta_pid=$(pid_meta_value pid) || return 1
+  meta_start_ticks=$(pid_meta_value start_ticks) || return 1
+  current_start_ticks=$(pid_start_ticks "$pid") || return 1
+  if [[ "$meta_pid" != "$pid" ]] || [[ "$meta_start_ticks" != "$current_start_ticks" ]]; then
+    return 1
+  fi
+
   return 0
 }
 
 staged_pid_running() {
-  is_managed_staged_pid
+  local pid
+  pid=$(pid_file_value) || return 1
+  is_managed_staged_pid "$pid"
 }
 
 pid_status() {
@@ -211,19 +328,29 @@ start_proxy() {
     return 0
   fi
 
+  if [[ ! -s "$PID_FILE" && -e "$PID_META_FILE" ]]; then
+    remove_pid_files
+  fi
+
   if [[ -s "$PID_FILE" ]]; then
     if staged_pid_running; then
       wait_for_health
       return
     fi
-    rm -f "$PID_FILE"
+    remove_pid_files
   fi
 
   mkdir -p "$FCC_DIR/logs"
   (
     cd "$STAGING_DIR"
-    nohup env FCC_ENV_FILE="$ENV_FILE" FCC_OPEN_BROWSER=false uv run fcc-server >>"$LOG_FILE" 2>&1 &
-    printf '%s\n' "$!" >"$PID_FILE"
+    nohup env FCC_ENV_FILE="$ENV_FILE" FCC_OPEN_BROWSER=false NERD_CLAUDE_MANAGED=free-claude-staging uv run fcc-server >>"$LOG_FILE" 2>&1 &
+    pid=$!
+    start_ticks=$(pid_start_ticks "$pid")
+    printf '%s\n' "$pid" >"$PID_FILE"
+    {
+      printf 'pid=%s\n' "$pid"
+      printf 'start_ticks=%s\n' "$start_ticks"
+    } >"$PID_META_FILE"
   )
   wait_for_health
 }
@@ -269,19 +396,24 @@ print_status() {
 
 stop_staged() {
   if [[ ! -s "$PID_FILE" ]]; then
+    if [[ -e "$PID_META_FILE" ]]; then
+      remove_pid_files
+      printf 'Removed stale/invalid staged proxy PID metadata at %s\n' "$PID_META_FILE"
+      return 0
+    fi
     printf 'No staged proxy PID file found at %s\n' "$PID_FILE"
     return 0
   fi
 
   local pid
   if ! pid=$(pid_file_value); then
-    rm -f "$PID_FILE"
+    remove_pid_files
     printf 'Removed stale/invalid staged proxy PID file at %s\n' "$PID_FILE"
     return 0
   fi
 
-  if ! is_managed_staged_pid; then
-    rm -f "$PID_FILE"
+  if ! is_managed_staged_pid "$pid"; then
+    remove_pid_files
     printf 'Removed stale/invalid staged proxy PID %s\n' "$pid"
     return 0
   fi
@@ -299,7 +431,7 @@ stop_staged() {
     return 1
   fi
   printf 'Stopped staged proxy PID %s\n' "$pid"
-  rm -f "$PID_FILE"
+  remove_pid_files
 }
 
 run_legacy_claude() {
