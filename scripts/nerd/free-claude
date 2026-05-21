@@ -1,0 +1,296 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+STAGING_DIR=${NERD_CLAUDE_STAGING_DIR:-/root/nerd-claude-free-staging}
+LEGACY_DIR=${NERD_CLAUDE_LEGACY_DIR:-/root/free-claude-code}
+FCC_DIR=${NERD_CLAUDE_FCC_DIR:-/root/.fcc}
+ENV_FILE=${FCC_ENV_FILE:-$FCC_DIR/.env}
+PID_FILE=$FCC_DIR/free-claude-staging.pid
+LOG_FILE=$FCC_DIR/logs/free-claude-staging.log
+
+usage() {
+  cat <<'EOF'
+Usage: free-claude [command] [args...]
+
+Commands:
+  free-claude [args...]  Ensure staged proxy is healthy, then run fcc-claude.
+  ui                    Ensure staged proxy is healthy, print/open Admin UI.
+  status                Print staged and legacy proxy status.
+  stop                  Stop only the staged proxy PID recorded by this wrapper.
+  legacy [args...]      Run claude against the legacy 127.0.0.1:8082 proxy.
+  help                  Show this help.
+  --help, -h            Show this help.
+
+Unknown commands are passed to fcc-claude after ensuring the staged proxy.
+EOF
+}
+
+env_value() {
+  local file=$1
+  local key=$2
+  local default=${3:-}
+  python3 - "$file" "$key" "$default" <<'PY'
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+wanted = sys.argv[2]
+default = sys.argv[3]
+values = {}
+
+if path.is_file():
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        values[key] = value
+
+print(values.get(wanted, default))
+PY
+}
+
+display_host() {
+  local host=$1
+  case "$host" in
+    ""|"0.0.0.0"|"::"|"[::]") printf '127.0.0.1' ;;
+    *:*)
+      case "$host" in
+        "["*"]") printf '%s' "$host" ;;
+        *) printf '[%s]' "$host" ;;
+      esac
+      ;;
+    *) printf '%s' "$host" ;;
+  esac
+}
+
+proxy_url() {
+  local host
+  local port
+  host=$(env_value "$ENV_FILE" HOST "127.0.0.1")
+  port=$(env_value "$ENV_FILE" PORT "18082")
+  printf 'http://%s:%s' "$(display_host "$host")" "$port"
+}
+
+admin_url() {
+  printf '%s/admin' "$(proxy_url)"
+}
+
+health_check_url() {
+  local url=$1
+  python3 - "$url" <<'PY'
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+import sys
+
+url = sys.argv[1].rstrip("/") + "/health"
+try:
+    with urlopen(Request(url, method="GET"), timeout=2.0) as response:
+        code = response.getcode()
+except (HTTPError, URLError, OSError):
+    raise SystemExit(1)
+
+raise SystemExit(0 if 200 <= code < 300 else 1)
+PY
+}
+
+staged_health() {
+  if health_check_url "$(proxy_url)" >/dev/null 2>&1; then
+    printf 'healthy'
+  else
+    printf 'unhealthy'
+  fi
+}
+
+legacy_health() {
+  if health_check_url "http://127.0.0.1:8082" >/dev/null 2>&1; then
+    printf 'healthy'
+  else
+    printf 'unhealthy'
+  fi
+}
+
+pid_status() {
+  if [[ ! -s "$PID_FILE" ]]; then
+    printf 'none'
+    return
+  fi
+
+  local pid
+  pid=$(<"$PID_FILE")
+  if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+    printf '%s' "$pid"
+  else
+    printf 'stale:%s' "$pid"
+  fi
+}
+
+wait_for_health() {
+  local deadline=$((SECONDS + 45))
+  while (( SECONDS < deadline )); do
+    if health_check_url "$(proxy_url)" >/dev/null 2>&1; then
+      return 0
+    fi
+    sleep 1
+  done
+
+  printf 'Staged proxy did not become healthy at %s/health\n' "$(proxy_url)" >&2
+  printf 'Log file: %s\n' "$LOG_FILE" >&2
+  return 1
+}
+
+start_proxy() {
+  if [[ ! -f "$ENV_FILE" ]]; then
+    (cd "$STAGING_DIR" && uv run python scripts/nerd/migrate_env.py >/dev/null)
+  fi
+
+  if health_check_url "$(proxy_url)" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if [[ -s "$PID_FILE" ]]; then
+    local existing_pid
+    existing_pid=$(<"$PID_FILE")
+    if [[ "$existing_pid" =~ ^[0-9]+$ ]] && kill -0 "$existing_pid" 2>/dev/null; then
+      wait_for_health
+      return
+    fi
+    rm -f "$PID_FILE"
+  fi
+
+  mkdir -p "$FCC_DIR/logs"
+  (
+    cd "$STAGING_DIR"
+    nohup env FCC_ENV_FILE="$ENV_FILE" FCC_OPEN_BROWSER=false uv run fcc-server >>"$LOG_FILE" 2>&1 &
+    printf '%s\n' "$!" >"$PID_FILE"
+  )
+  wait_for_health
+}
+
+run_staged_claude() {
+  start_proxy
+  cd "$STAGING_DIR"
+  env FCC_ENV_FILE="$ENV_FILE" uv run fcc-claude "$@"
+}
+
+open_admin_ui() {
+  local url
+  start_proxy
+  url=$(admin_url)
+  printf 'Admin UI: %s\n' "$url"
+  python3 - "$url" <<'PY' >/dev/null 2>&1 || true
+import sys
+import webbrowser
+
+webbrowser.open(sys.argv[1])
+PY
+}
+
+print_status() {
+  local branch
+  local commit
+  branch=$(git -C "$STAGING_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || printf 'unknown')
+  commit=$(git -C "$STAGING_DIR" rev-parse --short HEAD 2>/dev/null || printf 'unknown')
+
+  printf '[NERD-CLAUDE]-free status\n'
+  printf 'staging_dir=%s\n' "$STAGING_DIR"
+  printf 'branch=%s\n' "$branch"
+  printf 'commit=%s\n' "$commit"
+  printf 'env_file=%s\n' "$ENV_FILE"
+  printf 'proxy_url=%s\n' "$(proxy_url)"
+  printf 'admin_url=%s\n' "$(admin_url)"
+  printf 'pid=%s\n' "$(pid_status)"
+  printf 'staged_health=%s\n' "$(staged_health)"
+  printf 'legacy_dir=%s\n' "$LEGACY_DIR"
+  printf 'legacy_8082_health=%s\n' "$(legacy_health)"
+  printf 'log_file=%s\n' "$LOG_FILE"
+}
+
+stop_staged() {
+  if [[ ! -s "$PID_FILE" ]]; then
+    printf 'No staged proxy PID file found at %s\n' "$PID_FILE"
+    return 0
+  fi
+
+  local pid
+  pid=$(<"$PID_FILE")
+  if [[ ! "$pid" =~ ^[0-9]+$ ]]; then
+    rm -f "$PID_FILE"
+    printf 'Removed stale staged proxy PID file at %s\n' "$PID_FILE"
+    return 0
+  fi
+
+  if kill -0 "$pid" 2>/dev/null; then
+    kill "$pid"
+    local deadline=$((SECONDS + 10))
+    while (( SECONDS < deadline )); do
+      if ! kill -0 "$pid" 2>/dev/null; then
+        break
+      fi
+      sleep 1
+    done
+    if kill -0 "$pid" 2>/dev/null; then
+      printf 'Staged proxy PID %s is still running after SIGTERM\n' "$pid" >&2
+      return 1
+    fi
+    printf 'Stopped staged proxy PID %s\n' "$pid"
+  else
+    printf 'Removed stale staged proxy PID %s\n' "$pid"
+  fi
+  rm -f "$PID_FILE"
+}
+
+run_legacy_claude() {
+  if ! health_check_url "http://127.0.0.1:8082" >/dev/null 2>&1; then
+    printf 'Legacy proxy is not healthy at http://127.0.0.1:8082/health\n' >&2
+    return 1
+  fi
+
+  local legacy_env="$LEGACY_DIR/.env"
+  local token
+  token=$(env_value "$legacy_env" ANTHROPIC_AUTH_TOKEN "")
+  if [[ -z "$token" ]]; then
+    printf 'ANTHROPIC_AUTH_TOKEN is missing from %s\n' "$legacy_env" >&2
+    return 1
+  fi
+
+  env ANTHROPIC_BASE_URL="http://127.0.0.1:8082" ANTHROPIC_AUTH_TOKEN="$token" claude "$@"
+}
+
+main() {
+  local command=${1:-free-claude}
+  case "$command" in
+    help|--help|-h)
+      usage
+      ;;
+    free-claude)
+      shift || true
+      run_staged_claude "$@"
+      ;;
+    ui)
+      shift
+      open_admin_ui "$@"
+      ;;
+    status)
+      shift
+      print_status "$@"
+      ;;
+    stop)
+      shift
+      stop_staged "$@"
+      ;;
+    legacy)
+      shift
+      run_legacy_claude "$@"
+      ;;
+    *)
+      run_staged_claude "$@"
+      ;;
+  esac
+}
+
+main "$@"
