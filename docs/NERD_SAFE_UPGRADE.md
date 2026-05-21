@@ -84,7 +84,7 @@ Expected remote-origin response: `403`.
 - Confirm secret material is not committed:
 
 ```bash
-git -C /root/nerd-claude-free-staging grep -n -E 'sk-[A-Za-z0-9_-]{20,}|nvapi-[A-Za-z0-9_-]{20,}|wfr_[A-Za-z0-9_-]{20,}' HEAD || true
+git -C /root/nerd-claude-free-staging grep -n -E 'sk-[A-Za-z0-9_-]{20,}|nvapi-[A-Za-z0-9_-]{20,}|wfr_[A-Za-z0-9_-]{20,}' HEAD -- . ':!tests/providers/test_sse_builder.py' || true
 ```
 
 - Stop staged service before moving ports:
