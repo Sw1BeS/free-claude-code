@@ -1,0 +1,720 @@
+{
+  "generated_at": "2026-05-21T19:39:28Z",
+  "items": [
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/agency-backup"
+      ],
+      "id": "agency-backup",
+      "kind": "dir",
+      "name": "agency-backup",
+      "notes": "size_bytes=12504",
+      "path": "/root/agency-backup",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/agency-cost-optimizer"
+      ],
+      "id": "agency-cost-optimizer",
+      "kind": "dir",
+      "name": "agency-cost-optimizer",
+      "notes": "size_bytes=14023",
+      "path": "/root/agency-cost-optimizer",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/agency-macbook-integration"
+      ],
+      "id": "agency-macbook-integration",
+      "kind": "dir",
+      "name": "agency-macbook-integration",
+      "notes": "size_bytes=7063",
+      "path": "/root/agency-macbook-integration",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/agency-observability"
+      ],
+      "id": "agency-observability",
+      "kind": "dir",
+      "name": "agency-observability",
+      "notes": "size_bytes=5577088",
+      "path": "/root/agency-observability",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/agency-security"
+      ],
+      "id": "agency-security",
+      "kind": "dir",
+      "name": "agency-security",
+      "notes": "size_bytes=3675933",
+      "path": "/root/agency-security",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.agents"
+      ],
+      "id": "agents",
+      "kind": "dir",
+      "name": ".agents",
+      "notes": "size_bytes=47929869",
+      "path": "/root/.agents",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.antigravity-server"
+      ],
+      "id": "antigravity-server",
+      "kind": "dir",
+      "name": ".antigravity-server",
+      "notes": "size_bytes=353904558",
+      "path": "/root/.antigravity-server",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/archive"
+      ],
+      "id": "archive",
+      "kind": "archive",
+      "name": "archive",
+      "notes": "size_bytes=2408277565",
+      "path": "/root/archive",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "archived"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/backups"
+      ],
+      "id": "backups",
+      "kind": "dir",
+      "name": "backups",
+      "notes": "size_bytes=49988705",
+      "path": "/root/backups",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.bash_history"
+      ],
+      "id": "bash-history",
+      "kind": "dir",
+      "name": ".bash_history",
+      "notes": "size_bytes=45647",
+      "path": "/root/.bash_history",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.bashrc"
+      ],
+      "id": "bashrc",
+      "kind": "dir",
+      "name": ".bashrc",
+      "notes": "size_bytes=3945",
+      "path": "/root/.bashrc",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.claude"
+      ],
+      "id": "claude",
+      "kind": "config",
+      "name": ".claude",
+      "notes": "size_bytes=269245038",
+      "path": "/root/.claude",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "active"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.claude.json"
+      ],
+      "id": "claude-json",
+      "kind": "dir",
+      "name": ".claude.json",
+      "notes": "size_bytes=28103",
+      "path": "/root/.claude.json",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.cloud-locale-test.skip"
+      ],
+      "id": "cloud-locale-test-skip",
+      "kind": "dir",
+      "name": ".cloud-locale-test.skip",
+      "notes": "size_bytes=0",
+      "path": "/root/.cloud-locale-test.skip",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.codex"
+      ],
+      "id": "codex",
+      "kind": "config",
+      "name": ".codex",
+      "notes": "size_bytes=3018583924",
+      "path": "/root/.codex",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "active"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.config"
+      ],
+      "id": "config",
+      "kind": "dir",
+      "name": ".config",
+      "notes": "size_bytes=46553298",
+      "path": "/root/.config",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.docker"
+      ],
+      "id": "docker",
+      "kind": "dir",
+      "name": ".docker",
+      "notes": "size_bytes=5850",
+      "path": "/root/.docker",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/DOMAIN_DEPLOYMENT_PLAN.md"
+      ],
+      "id": "domain-deployment-plan-md",
+      "kind": "dir",
+      "name": "DOMAIN_DEPLOYMENT_PLAN.md",
+      "notes": "size_bytes=13376",
+      "path": "/root/DOMAIN_DEPLOYMENT_PLAN.md",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.dotnet"
+      ],
+      "id": "dotnet",
+      "kind": "dir",
+      "name": ".dotnet",
+      "notes": "size_bytes=238159",
+      "path": "/root/.dotnet",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.fcc"
+      ],
+      "id": "fcc",
+      "kind": "config",
+      "name": ".fcc",
+      "notes": "size_bytes=1402450",
+      "path": "/root/.fcc",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "active"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/free-claude-code"
+      ],
+      "id": "free-claude-code",
+      "kind": "repo",
+      "name": "free-claude-code",
+      "notes": "size_bytes=349963456; branch=main; commit=ff56b3c; dirty=true; remote:origin=https://github.com/Alishahryar1/free-claude-code.git",
+      "path": "/root/free-claude-code",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "legacy"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.gateguard"
+      ],
+      "id": "gateguard",
+      "kind": "dir",
+      "name": ".gateguard",
+      "notes": "size_bytes=114",
+      "path": "/root/.gateguard",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.gemini"
+      ],
+      "id": "gemini",
+      "kind": "dir",
+      "name": ".gemini",
+      "notes": "size_bytes=44679636",
+      "path": "/root/.gemini",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.git-credentials"
+      ],
+      "id": "git-credentials",
+      "kind": "dir",
+      "name": ".git-credentials",
+      "notes": "size_bytes=120",
+      "path": "/root/.git-credentials",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.gitconfig"
+      ],
+      "id": "gitconfig",
+      "kind": "dir",
+      "name": ".gitconfig",
+      "notes": "size_bytes=239",
+      "path": "/root/.gitconfig",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.gitnexus"
+      ],
+      "id": "gitnexus",
+      "kind": "config",
+      "name": ".gitnexus",
+      "notes": "size_bytes=2608",
+      "path": "/root/.gitnexus",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "active"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.hermes"
+      ],
+      "id": "hermes",
+      "kind": "config",
+      "name": ".hermes",
+      "notes": "size_bytes=1027602327",
+      "path": "/root/.hermes",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "active"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/hermes"
+      ],
+      "id": "hermes",
+      "kind": "repo",
+      "name": "hermes",
+      "notes": "size_bytes=15805655; branch=master; commit=a075de1; dirty=true",
+      "path": "/root/hermes",
+      "recommended_action": "review_later",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/hermes-config-backup-20260429-060617.tgz"
+      ],
+      "id": "hermes-config-backup-20260429-060617-tgz",
+      "kind": "dir",
+      "name": "hermes-config-backup-20260429-060617.tgz",
+      "notes": "size_bytes=6583",
+      "path": "/root/hermes-config-backup-20260429-060617.tgz",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/hermes-staging"
+      ],
+      "id": "hermes-staging",
+      "kind": "dir",
+      "name": "hermes-staging",
+      "notes": "size_bytes=34246",
+      "path": "/root/hermes-staging",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/IMPLEMENTATION_COMPLETE.md"
+      ],
+      "id": "implementation-complete-md",
+      "kind": "dir",
+      "name": "IMPLEMENTATION_COMPLETE.md",
+      "notes": "size_bytes=14014",
+      "path": "/root/IMPLEMENTATION_COMPLETE.md",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.lbdb"
+      ],
+      "id": "lbdb",
+      "kind": "dir",
+      "name": ".lbdb",
+      "notes": "size_bytes=3251936",
+      "path": "/root/.lbdb",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.local"
+      ],
+      "id": "local",
+      "kind": "dir",
+      "name": ".local",
+      "notes": "size_bytes=710777131",
+      "path": "/root/.local",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/nerd-agency-stack"
+      ],
+      "id": "nerd-agency-stack",
+      "kind": "dir",
+      "name": "nerd-agency-stack",
+      "notes": "size_bytes=34063",
+      "path": "/root/nerd-agency-stack",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/nerd_audit_20260428_235842"
+      ],
+      "id": "nerd-audit-20260428-235842",
+      "kind": "dir",
+      "name": "nerd_audit_20260428_235842",
+      "notes": "size_bytes=61547",
+      "path": "/root/nerd_audit_20260428_235842",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/nerd_audit_20260428_235842.tar.gz"
+      ],
+      "id": "nerd-audit-20260428-235842-tar-gz",
+      "kind": "dir",
+      "name": "nerd_audit_20260428_235842.tar.gz",
+      "notes": "size_bytes=15915",
+      "path": "/root/nerd_audit_20260428_235842.tar.gz",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/nerd-claude-free-staging"
+      ],
+      "id": "nerd-claude-free-staging",
+      "kind": "repo",
+      "name": "nerd-claude-free-staging",
+      "notes": "size_bytes=233986161; branch=nerd/safe-upgrade; commit=f9632d1; dirty=true; remote:upstream=https://github.com/Alishahryar1/free-claude-code.git",
+      "path": "/root/nerd-claude-free-staging",
+      "recommended_action": "review_later",
+      "risk": "low",
+      "status": "staged"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/nerd_deep_audit_20260429_000823"
+      ],
+      "id": "nerd-deep-audit-20260429-000823",
+      "kind": "dir",
+      "name": "nerd_deep_audit_20260429_000823",
+      "notes": "size_bytes=86057",
+      "path": "/root/nerd_deep_audit_20260429_000823",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/nerd_deep_audit_20260429_000823.tar.gz"
+      ],
+      "id": "nerd-deep-audit-20260429-000823-tar-gz",
+      "kind": "dir",
+      "name": "nerd_deep_audit_20260429_000823.tar.gz",
+      "notes": "size_bytes=14077",
+      "path": "/root/nerd_deep_audit_20260429_000823.tar.gz",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/nerd-method"
+      ],
+      "id": "nerd-method",
+      "kind": "dir",
+      "name": "nerd-method",
+      "notes": "size_bytes=21532582",
+      "path": "/root/nerd-method",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/NM_TMP_FOR_PROMT"
+      ],
+      "id": "nm-tmp-for-promt",
+      "kind": "dir",
+      "name": "NM_TMP_FOR_PROMT",
+      "notes": "size_bytes=16680737",
+      "path": "/root/NM_TMP_FOR_PROMT",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/obsidian-vault"
+      ],
+      "id": "obsidian-vault",
+      "kind": "dir",
+      "name": "obsidian-vault",
+      "notes": "size_bytes=163",
+      "path": "/root/obsidian-vault",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/plugins"
+      ],
+      "id": "plugins",
+      "kind": "dir",
+      "name": "plugins",
+      "notes": "size_bytes=18773",
+      "path": "/root/plugins",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.profile"
+      ],
+      "id": "profile",
+      "kind": "dir",
+      "name": ".profile",
+      "notes": "size_bytes=187",
+      "path": "/root/.profile",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/setup-hermes-dashboard-final.sh"
+      ],
+      "id": "setup-hermes-dashboard-final-sh",
+      "kind": "dir",
+      "name": "setup-hermes-dashboard-final.sh",
+      "notes": "size_bytes=3374",
+      "path": "/root/setup-hermes-dashboard-final.sh",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.ssh"
+      ],
+      "id": "ssh",
+      "kind": "dir",
+      "name": ".ssh",
+      "notes": "size_bytes=12320",
+      "path": "/root/.ssh",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.viminfo"
+      ],
+      "id": "viminfo",
+      "kind": "dir",
+      "name": ".viminfo",
+      "notes": "size_bytes=919",
+      "path": "/root/.viminfo",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.vscode"
+      ],
+      "id": "vscode",
+      "kind": "dir",
+      "name": ".vscode",
+      "notes": "size_bytes=35",
+      "path": "/root/.vscode",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.vscode-server"
+      ],
+      "id": "vscode-server",
+      "kind": "dir",
+      "name": ".vscode-server",
+      "notes": "size_bytes=1441750213",
+      "path": "/root/.vscode-server",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.wget-hsts"
+      ],
+      "id": "wget-hsts",
+      "kind": "dir",
+      "name": ".wget-hsts",
+      "notes": "size_bytes=183",
+      "path": "/root/.wget-hsts",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    },
+    {
+      "domain": "workspace",
+      "evidence": [
+        "/root/.zshrc"
+      ],
+      "id": "zshrc",
+      "kind": "dir",
+      "name": ".zshrc",
+      "notes": "size_bytes=26",
+      "path": "/root/.zshrc",
+      "recommended_action": "review_later",
+      "risk": "unknown",
+      "status": "present"
+    }
+  ],
+  "warnings": []
+}

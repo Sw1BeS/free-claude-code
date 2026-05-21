@@ -18,6 +18,9 @@ free-claude stop
 free-claude legacy
 ```
 
+The Admin UI includes a **NERD Stack** tab with generated inventory reports,
+CMS/commerce candidates, and the local Mac setup notes.
+
 ## Staged Proxy
 
 The staged proxy binds to `127.0.0.1:18082` by default. The legacy proxy remains on `8082` until a manual final switch is approved.

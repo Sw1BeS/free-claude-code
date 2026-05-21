@@ -11,6 +11,10 @@ from api.admin_urls import local_admin_url
 from api.app import create_app
 from config.settings import Settings
 
+ADMIN_JS_PATH = (
+    Path(__file__).resolve().parents[2] / "api" / "admin_static" / "admin.js"
+)
+
 
 def _local_client(app):
     return TestClient(app, client=("127.0.0.1", 50000))
@@ -72,7 +76,7 @@ def test_admin_page_no_longer_renders_global_status_header(monkeypatch, tmp_path
 
 
 def test_admin_static_no_longer_fetches_global_status_header():
-    script = Path("api/admin_static/admin.js").read_text(encoding="utf-8")
+    script = ADMIN_JS_PATH.read_text(encoding="utf-8")
 
     assert 'api("/admin/api/status")' not in script
     assert "updateHeader" not in script
@@ -82,12 +86,37 @@ def test_admin_static_no_longer_fetches_global_status_header():
 
 
 def test_admin_static_hides_managed_source_label():
-    script = Path("api/admin_static/admin.js").read_text(encoding="utf-8")
+    script = ADMIN_JS_PATH.read_text(encoding="utf-8")
 
     assert 'managed_env: "",' in script
     assert "hasOwnProperty.call(labels, source)" in script
     assert 'parts.push("locked")' in script
     assert "sourceEl.textContent = source" in script
+
+
+def test_admin_page_exposes_nerd_stack_reports(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+    app = create_app(lifespan_enabled=False)
+
+    response = _local_client(app).get("/admin")
+
+    assert response.status_code == 200
+    assert "view-nerd_stack" in response.text
+    assert "nerdReportGrid" in response.text
+    script = ADMIN_JS_PATH.read_text(encoding="utf-8")
+    assert 'label: "NERD Stack"' in script
+
+
+def test_admin_report_route_is_loopback_only(monkeypatch, tmp_path):
+    _set_home(monkeypatch, tmp_path)
+    app = create_app(lifespan_enabled=False)
+
+    response = _local_client(app).get("/admin/reports/next-phase-backlog.md")
+
+    assert response.status_code == 200
+    assert "Next Phase Backlog" in response.text
+    remote_client = TestClient(app, client=("203.0.113.10", 50000))
+    assert remote_client.get("/admin/reports/next-phase-backlog.md").status_code == 403
 
 
 def test_admin_config_masks_secrets_and_exposes_manifest(monkeypatch, tmp_path):

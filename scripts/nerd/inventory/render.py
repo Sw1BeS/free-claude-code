@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[3]))
@@ -11,7 +12,12 @@ else:
     from .models import InventoryReport, to_pretty_json
 
 SECRET_PATTERN = re.compile(
-    r"(sk-[A-Za-z0-9_-]{12,}|nvapi-[A-Za-z0-9_-]{12,}|wfr_[A-Za-z0-9_-]{12,})"
+    r"(?<![A-Za-z0-9_-])("
+    r"sk-or-v1-[A-Za-z0-9]{32,}|"
+    r"sk-[A-Za-z0-9]{32,}|"
+    r"nvapi-[A-Za-z0-9_-]{20,}|"
+    r"wfr_[A-Fa-f0-9]{20,}"
+    r")(?![A-Za-z0-9_-])"
 )
 
 
@@ -19,6 +25,16 @@ def redact(value: str | None) -> str:
     if not value:
         return ""
     return SECRET_PATTERN.sub("[REDACTED]", value)
+
+
+def redact_object(value: Any) -> Any:
+    if isinstance(value, str):
+        return redact(value)
+    if isinstance(value, list):
+        return [redact_object(item) for item in value]
+    if isinstance(value, dict):
+        return {key: redact_object(item) for key, item in value.items()}
+    return value
 
 
 def render_report_markdown(title: str, report: InventoryReport) -> str:
@@ -70,7 +86,7 @@ def write_report_pair(
 ) -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / f"{stem}.json").write_text(
-        to_pretty_json(report.to_dict()),
+        to_pretty_json(cast(dict[str, object], redact_object(report.to_dict()))),
         encoding="utf-8",
     )
     (output_dir / f"{stem}.md").write_text(

@@ -29,6 +29,7 @@ from .admin_urls import local_admin_url
 router = APIRouter()
 
 STATIC_DIR = Path(__file__).resolve().parent / "admin_static"
+INVENTORY_DIR = Path(__file__).resolve().parents[1] / "docs" / "nerd_inventory"
 LOCAL_PROVIDER_PATHS = {
     "lmstudio": "/models",
     "llamacpp": "/models",
@@ -92,6 +93,27 @@ async def admin_asset(filename: str, request: Request):
     if filename not in {"admin.css", "admin.js"}:
         raise HTTPException(status_code=404, detail="Admin asset not found")
     return _asset_response(filename)
+
+
+@router.get("/admin/reports/{filename}", include_in_schema=False)
+async def admin_report(filename: str, request: Request):
+    require_loopback_admin(request)
+    allowed = {
+        "claudecore-codemap.md",
+        "cms-candidates.md",
+        "gitinspired-catalog.md",
+        "mac-local-setup.md",
+        "mission-control-stack.md",
+        "next-phase-backlog.md",
+        "skills-inventory.md",
+        "workspace-map.md",
+    }
+    if filename not in allowed:
+        raise HTTPException(status_code=404, detail="Admin report not found")
+    path = INVENTORY_DIR / filename
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="Admin report not found")
+    return FileResponse(path, media_type="text/markdown")
 
 
 @router.get("/admin/api/config")

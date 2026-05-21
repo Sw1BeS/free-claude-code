@@ -1,0 +1,410 @@
+{
+  "generated_at": "2026-05-21T19:39:32Z",
+  "items": [
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "activation-pack-cms-commerce",
+      "kind": "config",
+      "name": "Activation Pack: cms-commerce",
+      "notes": "WordPress, WooCommerce, Shopify, SEO, analytics",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "activation-pack-daily",
+      "kind": "config",
+      "name": "Activation Pack: daily",
+      "notes": "GitHub, GitNexus, n8n, Open WebUI, Langfuse, Obsidian, NotebookLM",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "activation-pack-data",
+      "kind": "config",
+      "name": "Activation Pack: data",
+      "notes": "Polars, vector DB, scraping, data analytics",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "activation-pack-security-safe",
+      "kind": "config",
+      "name": "Activation Pack: security-safe",
+      "notes": "Audit/review only; no offensive active tooling in V1",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "unified-memory",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "memory-layer-clients",
+      "kind": "config",
+      "name": "Unified Memory: clients",
+      "notes": "Client context, preferences, constraints, and reusable delivery patterns",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "unified-memory",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "memory-layer-projects",
+      "kind": "config",
+      "name": "Unified Memory: projects",
+      "notes": "Client/project docs, task history, GitHub/GitNexus notes, and implementation reports",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "unified-memory",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "memory-layer-prompts",
+      "kind": "config",
+      "name": "Unified Memory: prompts",
+      "notes": "Prompt library, reusable skills, activation packs, and workflow templates",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "unified-memory",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "memory-layer-system",
+      "kind": "config",
+      "name": "Unified Memory: system",
+      "notes": "Open WebUI knowledge, NERD inventory, manifest, service directory, and operating policies",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "unified-memory",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "memory-layer-traces",
+      "kind": "config",
+      "name": "Unified Memory: traces",
+      "notes": "Langfuse traces, Grafana links, n8n executions, and incident notes",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "mission-control",
+      "evidence": [
+        "/root/nerd-agency-stack/docker-compose.yml"
+      ],
+      "id": "mission-docker-compose",
+      "kind": "config",
+      "name": "Mission Control docker-compose.yml",
+      "path": "/root/nerd-agency-stack/docker-compose.yml",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "mission-control",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.domains.yaml"
+      ],
+      "id": "mission-domains",
+      "kind": "config",
+      "name": "Mission Control nerd-agency.domains.yaml",
+      "path": "/root/nerd-agency-stack/nerd-agency.domains.yaml",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "mission-control",
+      "evidence": [
+        "/root/nerd-agency-stack/.env.example"
+      ],
+      "id": "mission-env-example",
+      "kind": "config",
+      "name": "Mission Control .env.example",
+      "path": "/root/nerd-agency-stack/.env.example",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "mission-control",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "mission-manifest",
+      "kind": "config",
+      "name": "Mission Control nerd-agency.manifest.yaml",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "mission-control",
+      "evidence": [
+        "/root/nerd-agency-stack/nginx/nerd-agency-mission-control.http.conf"
+      ],
+      "id": "mission-nginx-http",
+      "kind": "config",
+      "name": "Mission Control nginx/nerd-agency-mission-control.http.conf",
+      "path": "/root/nerd-agency-stack/nginx/nerd-agency-mission-control.http.conf",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "mission-control",
+      "evidence": [
+        "/root/nerd-agency-stack/nginx/nerd-agency-mission-control.https.conf"
+      ],
+      "id": "mission-nginx-https",
+      "kind": "config",
+      "name": "Mission Control nginx/nerd-agency-mission-control.https.conf",
+      "path": "/root/nerd-agency-stack/nginx/nerd-agency-mission-control.https.conf",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "automation",
+      "evidence": [
+        "/root/nerd-agency-stack/n8n/v1-workflows"
+      ],
+      "id": "n8n-v1-workflows",
+      "kind": "config",
+      "name": "n8n V1 Workflows",
+      "notes": "count=5; workflows=cms-commerce-planning.workflow.json, github-repo-triage.workflow.json, health-status.workflow.json, langfuse-trace-lookup.workflow.json, regenerate-inventory.workflow.json",
+      "path": "/root/nerd-agency-stack/n8n/v1-workflows",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "mission-control",
+      "evidence": [
+        "/root/nerd-agency-stack"
+      ],
+      "id": "nerd-agency-stack",
+      "kind": "dir",
+      "name": "NERD Agency Stack",
+      "notes": "public_url=https://agency.umanoff-analytics.space; open_webui_loopback=http://127.0.0.1:38080",
+      "path": "/root/nerd-agency-stack",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "public-routing",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "public-domain-agency",
+      "kind": "service",
+      "name": "Public Domain: agency.umanoff-analytics.space",
+      "notes": "Primary Mission Control shell; target=agency.umanoff-analytics.space; backend=Open WebUI; expose_raw_backend=false",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "investigate"
+    },
+    {
+      "domain": "public-routing",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "public-domain-agents",
+      "kind": "service",
+      "name": "Public Domain: agents.umanoff-analytics.space",
+      "notes": "Agent task workspaces routed to Mission Control; target=agency.umanoff-analytics.space; backend=Open WebUI; expose_raw_backend=false",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "investigate"
+    },
+    {
+      "domain": "public-routing",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "public-domain-automations",
+      "kind": "service",
+      "name": "Public Domain: automations.umanoff-analytics.space",
+      "notes": "Automation workspace routed to Mission Control; target=agency.umanoff-analytics.space; backend=Open WebUI; expose_raw_backend=false",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "investigate"
+    },
+    {
+      "domain": "public-routing",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "public-domain-cms",
+      "kind": "service",
+      "name": "Public Domain: cms.umanoff-analytics.space",
+      "notes": "CMS and commerce workspace routed to Mission Control; target=agency.umanoff-analytics.space; backend=Open WebUI; expose_raw_backend=false",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "investigate"
+    },
+    {
+      "domain": "public-routing",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "public-domain-memory",
+      "kind": "service",
+      "name": "Public Domain: memory.umanoff-analytics.space",
+      "notes": "Unified memory and knowledge workspace routed to Mission Control; target=agency.umanoff-analytics.space; backend=Open WebUI; expose_raw_backend=false",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "investigate"
+    },
+    {
+      "domain": "public-routing",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "public-domain-obs",
+      "kind": "service",
+      "name": "Public Domain: obs.umanoff-analytics.space",
+      "notes": "Observability workspace routed to Mission Control; target=agency.umanoff-analytics.space; backend=Open WebUI; expose_raw_backend=false",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "investigate"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-free-claude-admin",
+      "kind": "service",
+      "name": "Internal Service: free-claude-admin",
+      "notes": "internal_url=http://127.0.0.1:18082/admin",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "active"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-gitnexus",
+      "kind": "service",
+      "name": "Internal Service: gitnexus",
+      "notes": "internal_url=http://127.0.0.1:4173",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "active"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-grafana",
+      "kind": "service",
+      "name": "Internal Service: grafana",
+      "notes": "internal_url=http://127.0.0.1:3002",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "active"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-langfuse",
+      "kind": "service",
+      "name": "Internal Service: langfuse",
+      "notes": "internal_url=http://127.0.0.1:3300",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "active"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-litellm",
+      "kind": "service",
+      "name": "Internal Service: litellm",
+      "notes": "internal_url=http://127.0.0.1:44000",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "active"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-n8n",
+      "kind": "service",
+      "name": "Internal Service: n8n",
+      "notes": "internal_url=http://127.0.0.1:5678",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "active"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-ollama",
+      "kind": "service",
+      "name": "Internal Service: ollama",
+      "notes": "internal_url=http://127.0.0.1:11434",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "active"
+    },
+    {
+      "domain": "service-map",
+      "evidence": [],
+      "id": "service-open-webui",
+      "kind": "service",
+      "name": "Internal Service: open-webui",
+      "notes": "internal_url=http://127.0.0.1:38080",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "active"
+    }
+  ],
+  "warnings": []
+}

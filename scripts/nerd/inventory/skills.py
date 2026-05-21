@@ -75,10 +75,15 @@ def scan_skill_roots(
 ) -> list[InventoryItem]:
     items: list[InventoryItem] = []
     seen_ids: set[str] = set()
+    seen_paths: set[Path] = set()
     for root in roots:
         if not root.exists():
             continue
         for skill_file in sorted(root.rglob("SKILL.md")):
+            resolved = skill_file.resolve()
+            if resolved in seen_paths:
+                continue
+            seen_paths.add(resolved)
             parsed = parse_skill_file(skill_file)
             name = parsed.get("name", skill_file.parent.name)
             description = parsed.get("description", "")

@@ -229,6 +229,38 @@ textarea {
   background: var(--card);
 }
 
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px;
+}
+
+.report-card {
+  display: grid;
+  gap: 8px;
+  min-height: 98px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: var(--card);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.report-card:hover {
+  border-color: var(--accent);
+}
+
+.report-card strong {
+  font-size: 14px;
+}
+
+.report-card span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .provider-title {
   display: flex;
   align-items: center;

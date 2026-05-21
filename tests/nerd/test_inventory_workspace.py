@@ -43,7 +43,9 @@ def test_scan_workspace_detects_repo_and_dir(tmp_path):
     workspace = load_workspace()
     repo = tmp_path / "repo"
     repo.mkdir()
-    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "init"], cwd=repo, check=True, capture_output=True, text=True
+    )
     regular = tmp_path / "regular"
     regular.mkdir()
 

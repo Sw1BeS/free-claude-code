@@ -19,8 +19,12 @@ def load_git_utils():
 
 
 def init_repo(path: Path) -> None:
-    subprocess.run(["git", "init"], cwd=path, check=True, capture_output=True, text=True)
-    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=path, check=True)
+    subprocess.run(
+        ["git", "init"], cwd=path, check=True, capture_output=True, text=True
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"], cwd=path, check=True
+    )
     subprocess.run(["git", "config", "user.name", "Test User"], cwd=path, check=True)
     (path / "README.md").write_text("# repo\n")
     subprocess.run(["git", "add", "README.md"], cwd=path, check=True)

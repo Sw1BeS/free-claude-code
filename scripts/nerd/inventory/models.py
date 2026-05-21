@@ -5,7 +5,9 @@ import re
 from dataclasses import dataclass, field
 from typing import Literal
 
-Kind = Literal["repo", "dir", "skill", "service", "config", "doc", "archive", "candidate"]
+Kind = Literal[
+    "repo", "dir", "skill", "service", "config", "doc", "archive", "candidate"
+]
 Status = Literal[
     "active",
     "staged",

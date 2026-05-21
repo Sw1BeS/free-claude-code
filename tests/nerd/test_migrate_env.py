@@ -2,7 +2,9 @@ import importlib.util
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
-MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "nerd" / "migrate_env.py"
+MODULE_PATH = (
+    Path(__file__).resolve().parents[2] / "scripts" / "nerd" / "migrate_env.py"
+)
 
 
 def load_migrate_env():

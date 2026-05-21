@@ -29,6 +29,56 @@ const VIEW_GROUPS = [
     sections: ["messaging", "voice"],
     containerId: "messagingSections",
   },
+  {
+    id: "nerd_stack",
+    label: "NERD Stack",
+    title: "NERD Stack",
+    sections: [],
+    containerId: null,
+  },
+];
+
+const NERD_REPORTS = [
+  {
+    title: "ClaudeCore Codemap",
+    href: "/admin/reports/claudecore-codemap.md",
+    meta: "Current staged vs legacy structure and upstream drift.",
+  },
+  {
+    title: "GitInspired Catalog",
+    href: "/admin/reports/gitinspired-catalog.md",
+    meta: "Presence and integration status for requested repositories.",
+  },
+  {
+    title: "Skills Inventory",
+    href: "/admin/reports/skills-inventory.md",
+    meta: "Installed skill stores grouped by inferred domain.",
+  },
+  {
+    title: "CMS Candidates",
+    href: "/admin/reports/cms-candidates.md",
+    meta: "WordPress, Elementor, Shopify, and CMS MCP candidates.",
+  },
+  {
+    title: "Workspace Map",
+    href: "/admin/reports/workspace-map.md",
+    meta: "Local repos, configs, archives, and active staged checkout.",
+  },
+  {
+    title: "Mission Control",
+    href: "/admin/reports/mission-control-stack.md",
+    meta: "Open WebUI, n8n workflows, activation packs, and service map.",
+  },
+  {
+    title: "Mac Local Setup",
+    href: "/admin/reports/mac-local-setup.md",
+    meta: "Same staged setup for a local Mac with shared sync boundaries.",
+  },
+  {
+    title: "Next Backlog",
+    href: "/admin/reports/next-phase-backlog.md",
+    meta: "Sequenced next work after this safe staged layer.",
+  },
 ];
 
 const byId = (id) => document.getElementById(id);
@@ -104,6 +154,7 @@ async function load() {
   renderNav();
   renderProviders(config.provider_status);
   renderSections(config.sections, config.fields);
+  renderNerdReports();
   byId("configPath").textContent = config.paths.managed;
   await validate(false);
   await refreshLocalStatus();
@@ -206,7 +257,9 @@ function updateProviderCard(providerId, status, label, metaText) {
 
 function renderSections(sections, fields) {
   VIEW_GROUPS.forEach((view) => {
-    byId(view.containerId).innerHTML = "";
+    if (view.containerId) {
+      byId(view.containerId).innerHTML = "";
+    }
   });
 
   const sectionById = new Map(sections.map((section) => [section.id, section]));
@@ -218,6 +271,7 @@ function renderSections(sections, fields) {
   });
 
   VIEW_GROUPS.forEach((view) => {
+    if (!view.containerId) return;
     const container = byId(view.containerId);
     view.sections.forEach((sectionId) => {
       const section = sectionById.get(sectionId);
@@ -254,6 +308,28 @@ function renderSections(sections, fields) {
 
       container.appendChild(sectionEl);
     });
+  });
+}
+
+function renderNerdReports() {
+  const grid = byId("nerdReportGrid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  NERD_REPORTS.forEach((report) => {
+    const link = document.createElement("a");
+    link.className = "report-card";
+    link.href = report.href;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+
+    const title = document.createElement("strong");
+    title.textContent = report.title;
+
+    const meta = document.createElement("span");
+    meta.textContent = report.meta;
+
+    link.append(title, meta);
+    grid.appendChild(link);
   });
 }
 

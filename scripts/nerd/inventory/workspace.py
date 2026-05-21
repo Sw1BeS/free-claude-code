@@ -27,6 +27,7 @@ SKIP_NAMES = {
     "node_modules",
     "__pycache__",
 }
+MAX_SIZE_SCAN_FILES = 5000
 
 
 def generated_at() -> str:
@@ -58,7 +59,9 @@ def _safe_size_bytes(path: Path) -> int:
     if path.is_file():
         return path.stat().st_size
     total = 0
-    for child in path.rglob("*"):
+    for index, child in enumerate(path.rglob("*")):
+        if index >= MAX_SIZE_SCAN_FILES:
+            break
         if child.name in SKIP_NAMES:
             continue
         try:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +20,20 @@ if __package__ in {None, ""}:
 else:
     from .models import Action, InventoryItem, InventoryReport, Status, slugify
     from .workspace import generated_at
+
+SKIP_DIR_NAMES = {
+    ".cache",
+    ".git",
+    ".mypy_cache",
+    ".npm",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "node_modules",
+    "venv",
+}
+MAX_EVIDENCE = 8
 
 
 @dataclass(frozen=True)
@@ -189,22 +205,48 @@ GITINSPIRED_REPOS = (
 )
 
 
+def _name_tokens(name: str) -> set[str]:
+    return {token for token in re.split(r"[^a-z0-9]+", name.lower()) if token}
+
+
+def _matches_alias(name: str, aliases: tuple[str, ...]) -> bool:
+    normalized = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+    tokens = _name_tokens(name)
+    for alias in aliases:
+        normalized_alias = re.sub(r"[^a-z0-9]+", "-", alias.lower()).strip("-")
+        if not normalized_alias:
+            continue
+        if len(normalized_alias) <= 4:
+            if normalized_alias in tokens or normalized == normalized_alias:
+                return True
+            continue
+        if normalized_alias in normalized:
+            return True
+    return False
+
+
 def _find_evidence(aliases: tuple[str, ...], search_roots: list[Path]) -> list[str]:
     evidence: list[str] = []
-    lowered_aliases = tuple(alias.lower() for alias in aliases)
     for root in search_roots:
         if not root.exists():
             continue
-        for child in root.rglob("*"):
-            if len(evidence) >= 8:
+        for current_root, dir_names, file_names in os.walk(root):
+            dir_names[:] = [name for name in dir_names if name not in SKIP_DIR_NAMES]
+            candidates = [*(Path(current_root) / name for name in dir_names)]
+            candidates.extend(Path(current_root) / name for name in file_names)
+            for child in candidates:
+                if len(evidence) >= MAX_EVIDENCE:
+                    return sorted(evidence)
+                if _matches_alias(child.name, aliases):
+                    evidence.append(str(child))
+            if len(evidence) >= MAX_EVIDENCE:
                 return sorted(evidence)
-            name = child.name.lower()
-            if any(alias in name for alias in lowered_aliases):
-                evidence.append(str(child))
     return sorted(evidence)
 
 
-def classify_candidate(repo: GitInspiredRepo, search_roots: list[Path]) -> InventoryItem:
+def classify_candidate(
+    repo: GitInspiredRepo, search_roots: list[Path]
+) -> InventoryItem:
     evidence = _find_evidence(repo.aliases, search_roots)
     if evidence:
         status = "present"
@@ -234,10 +276,13 @@ def build_gitinspired_catalog(
     search_roots: list[Path] | None = None,
 ) -> InventoryReport:
     roots = search_roots or [
-        Path("/root"),
         Path("/root/.agents/plugins/skills"),
+        Path("/root/.agents/skills"),
         Path("/root/.claude/skills"),
         Path("/root/.hermes/skills"),
+        Path("/root/free-claude-code"),
+        Path("/root/nerd-method"),
+        Path("/root/hermes"),
     ]
     return InventoryReport(
         generated_at=generated_at(),

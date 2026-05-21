@@ -8,7 +8,9 @@ GITINSPIRED_PATH = ROOT / "scripts" / "nerd" / "inventory" / "gitinspired.py"
 
 
 def load_gitinspired():
-    spec = importlib.util.spec_from_file_location("inventory_gitinspired", GITINSPIRED_PATH)
+    spec = importlib.util.spec_from_file_location(
+        "inventory_gitinspired", GITINSPIRED_PATH
+    )
     if spec is None or not isinstance(spec.loader, SourceFileLoader):
         raise AssertionError(f"Unable to load gitinspired from {GITINSPIRED_PATH}")
     module = importlib.util.module_from_spec(spec)
