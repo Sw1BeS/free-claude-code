@@ -114,6 +114,59 @@ legacy_health() {
   fi
 }
 
+pid_file_value() {
+  if [[ ! -s "$PID_FILE" ]]; then
+    return 1
+  fi
+
+  local pid
+  pid=$(<"$PID_FILE")
+  if [[ "$pid" =~ ^[0-9]+$ ]]; then
+    printf '%s' "$pid"
+    return 0
+  fi
+
+  return 1
+}
+
+is_managed_staged_pid() {
+  local pid
+  pid=$(pid_file_value) || return 1
+
+  if [[ ! -d "/proc/$pid" ]] || ! kill -0 "$pid" 2>/dev/null; then
+    return 1
+  fi
+
+  local staging_real
+  local cwd_real
+  staging_real=$(readlink -f "$STAGING_DIR" 2>/dev/null) || return 1
+  cwd_real=$(readlink -f "/proc/$pid/cwd" 2>/dev/null) || return 1
+  if [[ "$cwd_real" != "$staging_real" ]]; then
+    return 1
+  fi
+
+  local cmdline
+  cmdline=$(tr '\0' ' ' <"/proc/$pid/cmdline" 2>/dev/null) || return 1
+  if [[ -z "$cmdline" ]]; then
+    return 1
+  fi
+  if [[ "$cmdline" == *"$LEGACY_DIR"* ]] || [[ "$cmdline" == *"/root/free-claude-code"* ]]; then
+    return 1
+  fi
+  if [[ "$cmdline" != *"uv"* ]]; then
+    return 1
+  fi
+  if [[ "$cmdline" != *"fcc-server"* ]] && [[ "$cmdline" != *"uvicorn"* ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
+staged_pid_running() {
+  is_managed_staged_pid
+}
+
 pid_status() {
   if [[ ! -s "$PID_FILE" ]]; then
     printf 'none'
@@ -121,9 +174,15 @@ pid_status() {
   fi
 
   local pid
-  pid=$(<"$PID_FILE")
-  if [[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null; then
+  if ! pid=$(pid_file_value); then
+    printf 'stale:invalid'
+    return
+  fi
+
+  if staged_pid_running; then
     printf '%s' "$pid"
+  elif kill -0 "$pid" 2>/dev/null; then
+    printf 'invalid:%s' "$pid"
   else
     printf 'stale:%s' "$pid"
   fi
@@ -145,7 +204,7 @@ wait_for_health() {
 
 start_proxy() {
   if [[ ! -f "$ENV_FILE" ]]; then
-    (cd "$STAGING_DIR" && uv run python scripts/nerd/migrate_env.py >/dev/null)
+    (cd "$STAGING_DIR" && uv run python scripts/nerd/migrate_env.py --managed-env "$ENV_FILE" >/dev/null)
   fi
 
   if health_check_url "$(proxy_url)" >/dev/null 2>&1; then
@@ -153,9 +212,7 @@ start_proxy() {
   fi
 
   if [[ -s "$PID_FILE" ]]; then
-    local existing_pid
-    existing_pid=$(<"$PID_FILE")
-    if [[ "$existing_pid" =~ ^[0-9]+$ ]] && kill -0 "$existing_pid" 2>/dev/null; then
+    if staged_pid_running; then
       wait_for_health
       return
     fi
@@ -217,30 +274,31 @@ stop_staged() {
   fi
 
   local pid
-  pid=$(<"$PID_FILE")
-  if [[ ! "$pid" =~ ^[0-9]+$ ]]; then
+  if ! pid=$(pid_file_value); then
     rm -f "$PID_FILE"
-    printf 'Removed stale staged proxy PID file at %s\n' "$PID_FILE"
+    printf 'Removed stale/invalid staged proxy PID file at %s\n' "$PID_FILE"
     return 0
   fi
 
-  if kill -0 "$pid" 2>/dev/null; then
-    kill "$pid"
-    local deadline=$((SECONDS + 10))
-    while (( SECONDS < deadline )); do
-      if ! kill -0 "$pid" 2>/dev/null; then
-        break
-      fi
-      sleep 1
-    done
-    if kill -0 "$pid" 2>/dev/null; then
-      printf 'Staged proxy PID %s is still running after SIGTERM\n' "$pid" >&2
-      return 1
-    fi
-    printf 'Stopped staged proxy PID %s\n' "$pid"
-  else
-    printf 'Removed stale staged proxy PID %s\n' "$pid"
+  if ! is_managed_staged_pid; then
+    rm -f "$PID_FILE"
+    printf 'Removed stale/invalid staged proxy PID %s\n' "$pid"
+    return 0
   fi
+
+  kill "$pid"
+  local deadline=$((SECONDS + 10))
+  while (( SECONDS < deadline )); do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      break
+    fi
+    sleep 1
+  done
+  if kill -0 "$pid" 2>/dev/null; then
+    printf 'Staged proxy PID %s is still running after SIGTERM\n' "$pid" >&2
+    return 1
+  fi
+  printf 'Stopped staged proxy PID %s\n' "$pid"
   rm -f "$PID_FILE"
 }
 
