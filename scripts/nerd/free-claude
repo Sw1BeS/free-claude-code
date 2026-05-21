@@ -8,6 +8,7 @@ ENV_FILE=${FCC_ENV_FILE:-$FCC_DIR/.env}
 PID_FILE=$FCC_DIR/free-claude-staging.pid
 PID_META_FILE=$FCC_DIR/free-claude-staging.pid.meta
 LOG_FILE=$FCC_DIR/logs/free-claude-staging.log
+SYSTEMD_SERVICE=free-claude-staging.service
 
 usage() {
   cat <<'EOF'
@@ -232,6 +233,34 @@ remove_pid_files() {
   rm -f "$PID_FILE" "$PID_META_FILE"
 }
 
+systemd_available() {
+  [[ -d /run/systemd/system ]] || return 1
+  command -v systemd-run >/dev/null 2>&1 || return 1
+  command -v systemctl >/dev/null 2>&1 || return 1
+}
+
+systemd_service_active() {
+  systemd_available || return 1
+  systemctl is-active --quiet "$SYSTEMD_SERVICE" 2>/dev/null
+}
+
+record_systemd_pid() {
+  systemd_service_active || return 1
+
+  local pid
+  local start_ticks
+  pid=$(systemctl show --property=MainPID --value "$SYSTEMD_SERVICE" 2>/dev/null) || return 1
+  [[ "$pid" =~ ^[0-9]+$ ]] || return 1
+  [[ "$pid" != "0" ]] || return 1
+
+  start_ticks=$(pid_start_ticks "$pid") || return 1
+  printf '%s\n' "$pid" >"$PID_FILE"
+  {
+    printf 'pid=%s\n' "$pid"
+    printf 'start_ticks=%s\n' "$start_ticks"
+  } >"$PID_META_FILE"
+}
+
 is_managed_staged_pid() {
   local pid=$1
   [[ "$pid" =~ ^[0-9]+$ ]] || return 1
@@ -341,17 +370,39 @@ start_proxy() {
   fi
 
   mkdir -p "$FCC_DIR/logs"
-  (
-    cd "$STAGING_DIR"
-    nohup env FCC_ENV_FILE="$ENV_FILE" FCC_OPEN_BROWSER=false NERD_CLAUDE_MANAGED=free-claude-staging uv run fcc-server >>"$LOG_FILE" 2>&1 &
-    pid=$!
-    start_ticks=$(pid_start_ticks "$pid")
-    printf '%s\n' "$pid" >"$PID_FILE"
-    {
-      printf 'pid=%s\n' "$pid"
-      printf 'start_ticks=%s\n' "$start_ticks"
-    } >"$PID_META_FILE"
-  )
+
+  if systemd_available; then
+    systemctl reset-failed "$SYSTEMD_SERVICE" >/dev/null 2>&1 || true
+    systemd-run \
+      --unit="${SYSTEMD_SERVICE%.service}" \
+      --description='[NERD-CLAUDE]-free staged proxy' \
+      --working-directory="$STAGING_DIR" \
+      --setenv=FCC_ENV_FILE="$ENV_FILE" \
+      --setenv=FCC_OPEN_BROWSER=false \
+      --setenv=NERD_CLAUDE_MANAGED=free-claude-staging \
+      --setenv=LOG_FILE="$LOG_FILE" \
+      /usr/bin/bash -c 'exec /root/.local/bin/uv run fcc-server >>"$LOG_FILE" 2>&1' >/dev/null 2>&1
+
+    local deadline=$((SECONDS + 10))
+    while (( SECONDS < deadline )); do
+      if record_systemd_pid; then
+        break
+      fi
+      sleep 1
+    done
+  else
+    (
+      cd "$STAGING_DIR"
+      nohup env FCC_ENV_FILE="$ENV_FILE" FCC_OPEN_BROWSER=false NERD_CLAUDE_MANAGED=free-claude-staging uv run fcc-server >>"$LOG_FILE" 2>&1 &
+      pid=$!
+      start_ticks=$(pid_start_ticks "$pid")
+      printf '%s\n' "$pid" >"$PID_FILE"
+      {
+        printf 'pid=%s\n' "$pid"
+        printf 'start_ticks=%s\n' "$start_ticks"
+      } >"$PID_META_FILE"
+    )
+  fi
   wait_for_health
 }
 
@@ -379,6 +430,9 @@ print_status() {
   local commit
   branch=$(git -C "$STAGING_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || printf 'unknown')
   commit=$(git -C "$STAGING_DIR" rev-parse --short HEAD 2>/dev/null || printf 'unknown')
+  if [[ ! -s "$PID_FILE" ]] && systemd_service_active; then
+    record_systemd_pid || true
+  fi
 
   printf '[NERD-CLAUDE]-free status\n'
   printf 'staging_dir=%s\n' "$STAGING_DIR"
@@ -395,6 +449,13 @@ print_status() {
 }
 
 stop_staged() {
+  if systemd_service_active; then
+    systemctl stop "$SYSTEMD_SERVICE"
+    remove_pid_files
+    printf 'Stopped staged proxy service %s\n' "$SYSTEMD_SERVICE"
+    return 0
+  fi
+
   if [[ ! -s "$PID_FILE" ]]; then
     if [[ -e "$PID_META_FILE" ]]; then
       remove_pid_files
