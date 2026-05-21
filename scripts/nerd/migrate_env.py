@@ -7,7 +7,6 @@ import argparse
 import os
 from pathlib import Path
 
-
 DEFAULT_LEGACY_ENV = Path("/root/free-claude-code/.env")
 DEFAULT_MANAGED_ENV = Path.home() / ".fcc" / ".env"
 STAGED_HOST = "127.0.0.1"

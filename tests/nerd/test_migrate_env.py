@@ -1,12 +1,15 @@
 import importlib.util
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
-
 
 MODULE_PATH = Path(__file__).resolve().parents[2] / "scripts" / "nerd" / "migrate_env.py"
 
 
 def load_migrate_env():
     spec = importlib.util.spec_from_file_location("migrate_env", MODULE_PATH)
+    if spec is None or not isinstance(spec.loader, SourceFileLoader):
+        raise AssertionError(f"Unable to load migrate_env module from {MODULE_PATH}")
+
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
