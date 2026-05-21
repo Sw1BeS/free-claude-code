@@ -85,3 +85,16 @@ def test_render_env_quotes_values_without_leaking_to_stdout(capsys):
     assert rendered == 'OPENROUTER_API_KEY="sk-test"\n'
     assert captured.out == ""
     assert captured.err == ""
+
+
+def test_migrate_secures_existing_managed_env_permissions(tmp_path):
+    module = load_migrate_env()
+    legacy_env = tmp_path / "legacy.env"
+    managed_env = tmp_path / "managed.env"
+    legacy_env.write_text('OPENROUTER_API_KEY="sk-test"\n')
+    managed_env.write_text('MODEL="existing-model"\n')
+    managed_env.chmod(0o644)
+
+    module.migrate(legacy_env=legacy_env, managed_env=managed_env, overwrite=False)
+
+    assert managed_env.stat().st_mode & 0o777 == 0o600

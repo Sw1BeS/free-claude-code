@@ -147,6 +147,7 @@ def migrate(
     previous_umask = os.umask(0o077)
     try:
         managed_env.write_text(render_env(values))
+        managed_env.chmod(0o600)
     finally:
         os.umask(previous_umask)
 
