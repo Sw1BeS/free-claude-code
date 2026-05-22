@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-21T19:39:28Z",
+  "generated_at": "2026-05-22T01:07:20Z",
   "items": [
     {
       "domain": "routing",
@@ -19,7 +19,7 @@
       "id": "gitinspired-agency-agents",
       "kind": "candidate",
       "name": "agency-agents",
-      "notes": "No strong local evidence found in configured search roots.",
+      "notes": "Agent-role pack candidate for reusable role definitions; not a runtime service.",
       "recommended_action": "install_later",
       "risk": "unknown",
       "source_url": "https://github.com/msitarzewski/agency-agents",
@@ -100,6 +100,42 @@
       "risk": "unknown",
       "source_url": "https://github.com/VoltAgent/awesome-openclaw-skills",
       "status": "present"
+    },
+    {
+      "domain": "desktop-control",
+      "evidence": [],
+      "id": "gitinspired-cc-switch",
+      "kind": "candidate",
+      "name": "cc-switch",
+      "notes": "Desktop all-in-one assistant candidate for Claude Code, Codex, OpenCode, OpenClaw, Gemini CLI, and Hermes Agent workflows.",
+      "recommended_action": "install_later",
+      "risk": "unknown",
+      "source_url": "https://github.com/farion1231/cc-switch",
+      "status": "missing"
+    },
+    {
+      "domain": "browser-automation",
+      "evidence": [],
+      "id": "gitinspired-cloakbrowser",
+      "kind": "candidate",
+      "name": "CloakBrowser",
+      "notes": "Playwright/Puppeteer-compatible stealth browser; high-risk automation candidate that should remain disabled by default until policy reviewed.",
+      "recommended_action": "install_later",
+      "risk": "unknown",
+      "source_url": "https://github.com/CloakHQ/CloakBrowser",
+      "status": "missing"
+    },
+    {
+      "domain": "code-graph",
+      "evidence": [],
+      "id": "gitinspired-codegraph",
+      "kind": "candidate",
+      "name": "codegraph",
+      "notes": "Local code knowledge graph candidate with CLI/MCP tools for search, context, callers, and impact analysis.",
+      "recommended_action": "install_later",
+      "risk": "unknown",
+      "source_url": "https://github.com/colbymchenry/codegraph",
+      "status": "missing"
     },
     {
       "domain": "skills",
@@ -254,6 +290,21 @@
         "/root/.agents/plugins/skills/notebooklm",
         "/root/.claude/skills/skills/notebooklm"
       ],
+      "id": "gitinspired-notebooklm-py",
+      "kind": "candidate",
+      "name": "notebooklm-py",
+      "notes": "Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation.",
+      "recommended_action": "normalize",
+      "risk": "unknown",
+      "source_url": "https://github.com/teng-lin/notebooklm-py",
+      "status": "present"
+    },
+    {
+      "domain": "google",
+      "evidence": [
+        "/root/.agents/plugins/skills/notebooklm",
+        "/root/.claude/skills/skills/notebooklm"
+      ],
       "id": "gitinspired-notebooklm-skill",
       "kind": "candidate",
       "name": "notebooklm-skill",
@@ -309,6 +360,18 @@
       "recommended_action": "install_later",
       "risk": "unknown",
       "source_url": "https://github.com/thesysdev/openui",
+      "status": "missing"
+    },
+    {
+      "domain": "agents",
+      "evidence": [],
+      "id": "gitinspired-ruflo",
+      "kind": "candidate",
+      "name": "ruflo",
+      "notes": "Multi-agent orchestration candidate for Claude Code with MCP, server, plugin, memory, and swarm capabilities.",
+      "recommended_action": "install_later",
+      "risk": "unknown",
+      "source_url": "https://github.com/ruvnet/ruflo",
       "status": "missing"
     },
     {

@@ -1,13 +1,13 @@
 # GitInspired Catalog
 
-Generated: `2026-05-21T19:39:28Z`
+Generated: `2026-05-22T01:07:20Z`
 
 | ID | Name | Kind | Status | Domain | Risk | Action |
 | --- | --- | --- | --- | --- | --- | --- |
 | `gitinspired-9router` | 9router | candidate | missing | routing | unknown | install_later |
 |  | source=https://github.com/decolua/9router; notes=No strong local evidence found in configured search roots. |  |  |  |  |  |
 | `gitinspired-agency-agents` | agency-agents | candidate | missing | agents | unknown | install_later |
-|  | source=https://github.com/msitarzewski/agency-agents; notes=No strong local evidence found in configured search roots. |  |  |  |  |  |
+|  | source=https://github.com/msitarzewski/agency-agents; notes=Agent-role pack candidate for reusable role definitions; not a runtime service. |  |  |  |  |  |
 | `gitinspired-awesome-claude-skills` | awesome-claude-skills | candidate | present | skills | unknown | normalize |
 |  | source=https://github.com/travisvn/awesome-claude-skills; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md, /root/.claude/skills/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md |  |  |  |  |  |
 | `gitinspired-awesome-copilot` | awesome-copilot | candidate | present | github | unknown | normalize |
@@ -18,6 +18,12 @@ Generated: `2026-05-21T19:39:28Z`
 |  | source=https://github.com/Hack-with-Github/Awesome-Hacking; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/ethical-hacking-methodology, /root/.claude/skills/skills/ethical-hacking-methodology |  |  |  |  |  |
 | `gitinspired-awesome-openclaw-skills` | awesome-openclaw-skills | candidate | present | skills | unknown | normalize |
 |  | source=https://github.com/VoltAgent/awesome-openclaw-skills; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/openclaw-github-repo-commander, /root/.claude/skills/skills/openclaw-github-repo-commander, /root/.hermes/skills/openclaw-imports, /root/hermes/archive/legacy_root/hermes-evolution-rollback-repo/backups/legacy-openclaw-pre-stop-sha256sums.txt, /root/nerd-method/departments/system-development/archive/legacy_root/hermes-evolution-rollback-repo/backups/legacy-openclaw-pre-stop-sha256sums.txt |  |  |  |  |  |
+| `gitinspired-cc-switch` | cc-switch | candidate | missing | desktop-control | unknown | install_later |
+|  | source=https://github.com/farion1231/cc-switch; notes=Desktop all-in-one assistant candidate for Claude Code, Codex, OpenCode, OpenClaw, Gemini CLI, and Hermes Agent workflows. |  |  |  |  |  |
+| `gitinspired-cloakbrowser` | CloakBrowser | candidate | missing | browser-automation | unknown | install_later |
+|  | source=https://github.com/CloakHQ/CloakBrowser; notes=Playwright/Puppeteer-compatible stealth browser; high-risk automation candidate that should remain disabled by default until policy reviewed. |  |  |  |  |  |
+| `gitinspired-codegraph` | codegraph | candidate | missing | code-graph | unknown | install_later |
+|  | source=https://github.com/colbymchenry/codegraph; notes=Local code knowledge graph candidate with CLI/MCP tools for search, context, callers, and impact analysis. |  |  |  |  |  |
 | `gitinspired-composio-awesome-claude-skills` | composio-awesome-claude-skills | candidate | present | skills | unknown | normalize |
 |  | source=https://github.com/ComposioHQ/awesome-claude-skills; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md, /root/.claude/skills/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md, /root/.hermes/skills/creative/popular-web-designs/templates/composio.md |  |  |  |  |  |
 | `gitinspired-crawl4ai` | crawl4ai | candidate | present | scraping | unknown | normalize |
@@ -38,6 +44,8 @@ Generated: `2026-05-21T19:39:28Z`
 |  | source=https://github.com/666ghj/MiroFish; notes=No strong local evidence found in configured search roots. |  |  |  |  |  |
 | `gitinspired-n8n-workflows` | n8n-workflows | candidate | present | n8n | unknown | normalize |
 |  | source=https://github.com/Zie619/n8n-workflows; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/n8n-code-javascript, /root/.agents/plugins/skills/n8n-code-python, /root/.agents/plugins/skills/n8n-expression-syntax, /root/.agents/plugins/skills/n8n-mcp-tools-expert, /root/.agents/plugins/skills/n8n-node-configuration |  |  |  |  |  |
+| `gitinspired-notebooklm-py` | notebooklm-py | candidate | present | google | unknown | normalize |
+|  | source=https://github.com/teng-lin/notebooklm-py; notes=Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation.; evidence=/root/.agents/plugins/skills/notebooklm, /root/.claude/skills/skills/notebooklm |  |  |  |  |  |
 | `gitinspired-notebooklm-skill` | notebooklm-skill | candidate | present | google | unknown | normalize |
 |  | source=https://github.com/PleasePrompto/notebooklm-skill; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/notebooklm, /root/.claude/skills/skills/notebooklm |  |  |  |  |  |
 | `gitinspired-open-design` | open-design | candidate | missing | design | unknown | install_later |
@@ -48,6 +56,8 @@ Generated: `2026-05-21T19:39:28Z`
 |  | source=https://github.com/kyegomez/OpenMythos; notes=No strong local evidence found in configured search roots. |  |  |  |  |  |
 | `gitinspired-openui` | openui | candidate | missing | ui | unknown | install_later |
 |  | source=https://github.com/thesysdev/openui; notes=No strong local evidence found in configured search roots. |  |  |  |  |  |
+| `gitinspired-ruflo` | ruflo | candidate | missing | agents | unknown | install_later |
+|  | source=https://github.com/ruvnet/ruflo; notes=Multi-agent orchestration candidate for Claude Code with MCP, server, plugin, memory, and swarm capabilities. |  |  |  |  |  |
 | `gitinspired-spec-kit` | spec-kit | candidate | missing | github | unknown | install_later |
 |  | source=https://github.com/github/spec-kit; notes=No strong local evidence found in configured search roots. |  |  |  |  |  |
 | `gitinspired-successor-agent` | successor-agent | candidate | missing | agents | unknown | install_later |

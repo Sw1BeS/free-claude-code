@@ -27,6 +27,11 @@ def test_catalog_contains_requested_repositories():
     assert "https://github.com/unclecode/crawl4ai" in urls
     assert "https://github.com/TauricResearch/TradingAgents" in urls
     assert "https://github.com/safishamsi/graphify" in urls
+    assert "https://github.com/CloakHQ/CloakBrowser" in urls
+    assert "https://github.com/ruvnet/ruflo" in urls
+    assert "https://github.com/colbymchenry/codegraph" in urls
+    assert "https://github.com/farion1231/cc-switch" in urls
+    assert "https://github.com/teng-lin/notebooklm-py" in urls
 
 
 def test_classify_candidate_from_skill_evidence(tmp_path):
@@ -67,3 +72,31 @@ def test_build_catalog_marks_missing_when_no_evidence(tmp_path):
 
     assert report.items[0].status == "missing"
     assert report.items[0].recommended_action == "install_later"
+
+
+def test_new_candidates_mark_missing_without_evidence(tmp_path):
+    gitinspired = load_gitinspired()
+    repos_by_name = {entry.name: entry for entry in gitinspired.GITINSPIRED_REPOS}
+
+    report = gitinspired.build_gitinspired_catalog(
+        repos=[
+            repos_by_name["ruflo"],
+            repos_by_name["codegraph"],
+            repos_by_name["notebooklm-py"],
+        ],
+        search_roots=[tmp_path],
+    )
+
+    statuses = {item.name: item.status for item in report.items}
+    actions = {item.name: item.recommended_action for item in report.items}
+
+    assert statuses == {
+        "ruflo": "missing",
+        "codegraph": "missing",
+        "notebooklm-py": "missing",
+    }
+    assert actions == {
+        "ruflo": "install_later",
+        "codegraph": "install_later",
+        "notebooklm-py": "install_later",
+    }
