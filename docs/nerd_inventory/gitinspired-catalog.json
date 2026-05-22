@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-22T06:03:20Z",
+  "generated_at": "2026-05-22T06:16:14Z",
   "items": [
     {
       "domain": "routing",
@@ -41,7 +41,9 @@
       "domain": "skills",
       "evidence": [
         "/root/.agents/plugins/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md",
-        "/root/.claude/skills/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md"
+        "/root/.claude/skills/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md",
+        "/root/nerd-method/tools/git-inspired/awesome-claude-skills-travisvn",
+        "/root/nerd-method/tools/git-inspired/composio-awesome-claude-skills"
       ],
       "id": "gitinspired-awesome-claude-skills",
       "kind": "candidate",
@@ -57,12 +59,12 @@
       "evidence": [
         "/root/.agents/plugins/skills/copilot-sdk",
         "/root/.claude/skills/skills/copilot-sdk",
-        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/commands/copilot.rs",
-        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/proxy/copilot_optimizer.rs",
-        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/proxy/providers/copilot_auth.rs",
-        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/proxy/providers/copilot_model_map.rs",
-        "/root/nerd-method/tools/git-inspired/cc-switch/src/lib/api/copilot.ts",
-        "/root/nerd-method/tools/git-inspired/cc-switch/src/lib/query/copilot.ts"
+        "/root/nerd-method/tools/git-inspired/awesome-copilot",
+        "/root/nerd-method/tools/git-inspired/awesome-copilot/.github/copilot-instructions.md",
+        "/root/nerd-method/tools/git-inspired/awesome-copilot/.github/workflows/copilot-setup-steps.yml",
+        "/root/nerd-method/tools/git-inspired/awesome-copilot/instructions/copilot-thought-logging.instructions.md",
+        "/root/nerd-method/tools/git-inspired/ui-ux-pro-max-skill/cli/assets/templates/platforms/copilot.json",
+        "/root/nerd-method/tools/git-inspired/ui-ux-pro-max-skill/src/ui-ux-pro-max/templates/platforms/copilot.json"
       ],
       "id": "gitinspired-awesome-copilot",
       "kind": "candidate",
@@ -75,21 +77,34 @@
     },
     {
       "domain": "design",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/awesome-design-systems",
+        "/root/nerd-method/tools/git-inspired/open-design/apps/daemon/src/design-systems.ts",
+        "/root/nerd-method/tools/git-inspired/open-design/apps/daemon/src/tools-design-systems-cli.ts",
+        "/root/nerd-method/tools/git-inspired/open-design/apps/daemon/tests/design-systems-frontmatter.test.ts",
+        "/root/nerd-method/tools/git-inspired/open-design/apps/daemon/tests/design-systems.test.ts",
+        "/root/nerd-method/tools/git-inspired/open-design/design-systems",
+        "/root/nerd-method/tools/git-inspired/open-design/packages/contracts/src/design-systems",
+        "/root/nerd-method/tools/git-inspired/open-design/plugins/_official/design-systems"
+      ],
       "id": "gitinspired-awesome-design-systems",
       "kind": "candidate",
       "name": "awesome-design-systems",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/alexpate/awesome-design-systems",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "security",
       "evidence": [
         "/root/.agents/plugins/skills/ethical-hacking-methodology",
-        "/root/.claude/skills/skills/ethical-hacking-methodology"
+        "/root/.claude/skills/skills/ethical-hacking-methodology",
+        "/root/nerd-method/tools/git-inspired/awesome-hacking",
+        "/root/nerd-method/tools/git-inspired/awesome-hacking/awesome_hacking.png",
+        "/root/nerd-method/tools/git-inspired/hackingtool",
+        "/root/nerd-method/tools/git-inspired/hackingtool/hackingtool.py"
       ],
       "id": "gitinspired-awesome-hacking",
       "kind": "candidate",
@@ -106,10 +121,10 @@
         "/root/.agents/plugins/skills/openclaw-github-repo-commander",
         "/root/.claude/skills/skills/openclaw-github-repo-commander",
         "/root/.hermes/skills/openclaw-imports",
+        "/root/nerd-method/tools/git-inspired/awesome-openclaw-skills",
         "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/commands/openclaw.rs",
         "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/openclaw_config.rs",
         "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/session_manager/providers/openclaw.rs",
-        "/root/nerd-method/tools/git-inspired/cc-switch/tests/components/openclaw.utils.test.ts",
         "/root/nerd-method/tools/git-inspired/cc-switch/tests/config/therouterOpenCodeOpenClawPresets.test.ts"
       ],
       "id": "gitinspired-awesome-openclaw-skills",
@@ -181,7 +196,12 @@
       "evidence": [
         "/root/.agents/plugins/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md",
         "/root/.claude/skills/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md",
-        "/root/.hermes/skills/creative/popular-web-designs/templates/composio.md"
+        "/root/.hermes/skills/creative/popular-web-designs/templates/composio.md",
+        "/root/nerd-method/tools/git-inspired/awesome-claude-skills-travisvn",
+        "/root/nerd-method/tools/git-inspired/composio-awesome-claude-skills",
+        "/root/nerd-method/tools/git-inspired/composio-awesome-claude-skills/composio-skills",
+        "/root/nerd-method/tools/git-inspired/composio-awesome-claude-skills/composio-skills/composio-automation",
+        "/root/nerd-method/tools/git-inspired/composio-awesome-claude-skills/composio-skills/composio-search-automation"
       ],
       "id": "gitinspired-composio-awesome-claude-skills",
       "kind": "candidate",
@@ -197,9 +217,12 @@
       "evidence": [
         "/root/.agents/plugins/skills/firecrawl-scraper",
         "/root/.claude/skills/skills/firecrawl-scraper",
-        "/root/nerd-method/tools/git-inspired/9router/public/providers/firecrawl.png",
         "/root/nerd-method/tools/git-inspired/CloakBrowser/examples/integrations/crawl4ai_example.py",
-        "/root/nerd-method/tools/git-inspired/CloakBrowser/examples/integrations/crawlee_example.py"
+        "/root/nerd-method/tools/git-inspired/CloakBrowser/examples/integrations/crawlee_example.py",
+        "/root/nerd-method/tools/git-inspired/composio-awesome-claude-skills/composio-skills/firecrawl-automation",
+        "/root/nerd-method/tools/git-inspired/crawl4ai",
+        "/root/nerd-method/tools/git-inspired/dify/packages/iconify-collections/assets/public/knowledge/watercrawl.svg",
+        "/root/nerd-method/tools/git-inspired/hackingtool/tools/others/web_crawling.py"
       ],
       "id": "gitinspired-crawl4ai",
       "kind": "candidate",
@@ -212,20 +235,36 @@
     },
     {
       "domain": "agents",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/dify",
+        "/root/nerd-method/tools/git-inspired/dify/dify-agent",
+        "/root/nerd-method/tools/git-inspired/dify/dify-agent/tests/local/dify_agent",
+        "/root/nerd-method/tools/git-inspired/dify/dify-agent/tests/local/dify_agent/layers/dify_plugin",
+        "/root/nerd-method/tools/git-inspired/dify/dify-agent/tests/local/examples/test_dify_agent_examples.py",
+        "/root/nerd-method/tools/git-inspired/dify/sdks/nodejs-client/src/errors/dify-error.test.ts",
+        "/root/nerd-method/tools/git-inspired/dify/sdks/nodejs-client/src/errors/dify-error.ts",
+        "/root/nerd-method/tools/git-inspired/dify/sdks/php-client/dify-client.php"
+      ],
       "id": "gitinspired-dify",
       "kind": "candidate",
       "name": "dify",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/langgenius/dify",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "claude",
       "evidence": [
-        "/root/.agents/plugins/skills/everything-claude-code"
+        "/root/.agents/plugins/skills/everything-claude-code",
+        "/root/nerd-method/tools/git-inspired/ecc",
+        "/root/nerd-method/tools/git-inspired/ecc/ecc_dashboard.py",
+        "/root/nerd-method/tools/git-inspired/ecc/tests/hooks/ecc-context-monitor.test.js",
+        "/root/nerd-method/tools/git-inspired/ecc/tests/hooks/ecc-metrics-bridge.test.js",
+        "/root/nerd-method/tools/git-inspired/ecc/tests/hooks/ecc-statusline.test.js",
+        "/root/nerd-method/tools/git-inspired/ecc/tests/lib/resolve-ecc-root.test.js",
+        "/root/nerd-method/tools/git-inspired/ecc/tests/scripts/ecc-dashboard.test.js"
       ],
       "id": "gitinspired-ecc",
       "kind": "candidate",
@@ -259,51 +298,69 @@
     },
     {
       "domain": "knowledge",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/graphify",
+        "/root/nerd-method/tools/git-inspired/graphify/graphify",
+        "/root/nerd-method/tools/git-inspired/graphify/tests/fixtures/graphify-out",
+        "/root/nerd-method/tools/git-inspired/open-design/design-templates/html-ppt-graphify-dark-graph",
+        "/root/nerd-method/tools/git-inspired/open-design/design-templates/html-ppt/templates/full-decks/graphify-dark-graph",
+        "/root/nerd-method/tools/git-inspired/open-design/plugins/_official/examples/html-ppt-graphify-dark-graph"
+      ],
       "id": "gitinspired-graphify",
       "kind": "candidate",
       "name": "graphify",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/safishamsi/graphify",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "security",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/hackingtool",
+        "/root/nerd-method/tools/git-inspired/hackingtool/hackingtool.py"
+      ],
       "id": "gitinspired-hackingtool",
       "kind": "candidate",
       "name": "hackingtool",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/Z4nzu/hackingtool",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "skills",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/mattpocock-skills"
+      ],
       "id": "gitinspired-mattpocock-skills",
       "kind": "candidate",
       "name": "mattpocock-skills",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/mattpocock/skills",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "agents",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/mirofish",
+        "/root/nerd-method/tools/git-inspired/mirofish/frontend/src/assets/logo/MiroFish_logo_compressed.jpeg",
+        "/root/nerd-method/tools/git-inspired/mirofish/frontend/src/assets/logo/MiroFish_logo_left.jpeg",
+        "/root/nerd-method/tools/git-inspired/mirofish/static/image/MiroFish_logo.jpeg",
+        "/root/nerd-method/tools/git-inspired/mirofish/static/image/MiroFish_logo_compressed.jpeg"
+      ],
       "id": "gitinspired-mirofish",
       "kind": "candidate",
       "name": "MiroFish",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/666ghj/MiroFish",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "n8n",
@@ -351,10 +408,10 @@
         "/root/.claude/skills/skills/notebooklm",
         "/root/nerd-method/tools/git-inspired/notebooklm-py",
         "/root/nerd-method/tools/git-inspired/notebooklm-py/notebooklm-py.png",
-        "/root/nerd-method/tools/git-inspired/notebooklm-py/src/notebooklm",
-        "/root/nerd-method/tools/git-inspired/notebooklm-py/src/notebooklm/notebooklm_cli.py",
         "/root/nerd-method/tools/git-inspired/notebooklm-py/tests/fixtures/notebooklm_html.html",
-        "/root/nerd-method/tools/python/notebooklm-py-venv"
+        "/root/nerd-method/tools/git-inspired/notebooklm-skill",
+        "/root/nerd-method/tools/git-inspired/open-design/docs/notebooklm.md",
+        "/root/nerd-method/tools/git-inspired/open-design/scripts/notebooklm-export-github.ts"
       ],
       "id": "gitinspired-notebooklm-skill",
       "kind": "candidate",
@@ -367,51 +424,80 @@
     },
     {
       "domain": "design",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/open-design",
+        "/root/nerd-method/tools/git-inspired/open-design/apps/landing-page/app/content/tutorials/open-design-in-20-minutes-coding-menace.md",
+        "/root/nerd-method/tools/git-inspired/open-design/apps/landing-page/app/content/tutorials/open-design-overview-worldofai.md",
+        "/root/nerd-method/tools/git-inspired/open-design/apps/landing-page/app/content/tutorials/open-design-replacing-claude-design-jack-roberts.md",
+        "/root/nerd-method/tools/git-inspired/open-design/design-templates/open-design-landing",
+        "/root/nerd-method/tools/git-inspired/open-design/design-templates/open-design-landing-deck",
+        "/root/nerd-method/tools/git-inspired/open-design/tools/pack/helm/open-design",
+        "/root/nerd-method/tools/git-inspired/open-design/tools/pack/resources/linux/open-design.desktop.template"
+      ],
       "id": "gitinspired-open-design",
       "kind": "candidate",
       "name": "open-design",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/nexu-io/open-design",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "agents",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/openjarvis",
+        "/root/nerd-method/tools/git-inspired/openjarvis/rust/crates/openjarvis-engine",
+        "/root/nerd-method/tools/git-inspired/openjarvis/rust/crates/openjarvis-learning",
+        "/root/nerd-method/tools/git-inspired/openjarvis/rust/crates/openjarvis-security",
+        "/root/nerd-method/tools/git-inspired/openjarvis/rust/crates/openjarvis-traces",
+        "/root/nerd-method/tools/git-inspired/openjarvis/tests/evals/test_jarvis_agent_backend_fields.py",
+        "/root/nerd-method/tools/git-inspired/openjarvis/tests/evals/test_jarvis_agent_backend_skills.py",
+        "/root/nerd-method/tools/git-inspired/openjarvis/tests/evals/test_jarvis_direct_backend_fields.py"
+      ],
       "id": "gitinspired-openjarvis",
       "kind": "candidate",
       "name": "OpenJarvis",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/open-jarvis/OpenJarvis",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "agents",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/openmythos"
+      ],
       "id": "gitinspired-openmythos",
       "kind": "candidate",
       "name": "OpenMythos",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/kyegomez/OpenMythos",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "ui",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/openui",
+        "/root/nerd-method/tools/git-inspired/openui/examples/openui-artifact-demo",
+        "/root/nerd-method/tools/git-inspired/openui/examples/openui-chat",
+        "/root/nerd-method/tools/git-inspired/openui/examples/openui-dashboard",
+        "/root/nerd-method/tools/git-inspired/openui/examples/openui-dashboard/src/components/OpenUIDashboard",
+        "/root/nerd-method/tools/git-inspired/openui/examples/openui-react-native",
+        "/root/nerd-method/tools/git-inspired/openui/examples/vue-chat/components/openui",
+        "/root/nerd-method/tools/git-inspired/openui/skills/openui"
+      ],
       "id": "gitinspired-openui",
       "kind": "candidate",
       "name": "openui",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/thesysdev/openui",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "agents",
@@ -436,34 +522,42 @@
     },
     {
       "domain": "github",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/spec-kit",
+        "/root/nerd-method/tools/git-inspired/spec-kit/media/spec-kit-video-header.jpg",
+        "/root/nerd-method/tools/git-inspired/spec-kit/spec-kit.code-workspace"
+      ],
       "id": "gitinspired-spec-kit",
       "kind": "candidate",
       "name": "spec-kit",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/github/spec-kit",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "agents",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/successor-agent"
+      ],
       "id": "gitinspired-successor-agent",
       "kind": "candidate",
       "name": "successor-agent",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/lyc-aon/successor-agent",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "finance",
       "evidence": [
         "/root/free-claude-code/TradingAgents",
         "/root/free-claude-code/TradingAgents/tradingagents",
-        "/root/free-claude-code/TradingAgents/tradingagents.egg-info"
+        "/root/free-claude-code/TradingAgents/tradingagents.egg-info",
+        "/root/nerd-method/tools/git-inspired/tradingagents",
+        "/root/nerd-method/tools/git-inspired/tradingagents/tradingagents"
       ],
       "id": "gitinspired-tradingagents",
       "kind": "candidate",
@@ -483,7 +577,8 @@
         "/root/.claude/skills/skills/ui-ux-pro-max",
         "/root/.hermes/skills/openclaw-imports/ui-ux-pro-max",
         "/root/free-claude-code/nerd-server-cartie/.agent/.shared/ui-ux-pro-max",
-        "/root/free-claude-code/nerd-server-cartie/.agent/workflows/ui-ux-pro-max.md"
+        "/root/free-claude-code/nerd-server-cartie/.agent/workflows/ui-ux-pro-max.md",
+        "/root/nerd-method/tools/git-inspired/ui-ux-pro-max-skill"
       ],
       "id": "gitinspired-ui-ux-pro-max-skill",
       "kind": "candidate",
