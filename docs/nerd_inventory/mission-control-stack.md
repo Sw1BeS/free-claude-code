@@ -1,6 +1,6 @@
 # Mission Control Stack
 
-Generated: `2026-05-21T19:39:32Z`
+Generated: `2026-05-22T01:23:32Z`
 
 | ID | Name | Kind | Status | Domain | Risk | Action |
 | --- | --- | --- | --- | --- | --- | --- |

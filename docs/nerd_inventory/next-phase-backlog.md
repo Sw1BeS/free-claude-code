@@ -1,6 +1,6 @@
 # Next Phase Backlog
 
-1. Rebase or merge NERD staged patch stack onto latest `upstream/main`.
+1. Harden unified brain sync across NERD reports, Open WebUI knowledge, Obsidian, GitNexus, n8n, and runtime manifests.
 2. Normalize installed WordPress, Shopify, n8n, NotebookLM, Obsidian, GitHub, data, and security skills into an activation manifest.
 3. Install/evaluate P0 CMS connectors: WordPress agent-skills, WordPress MCP Adapter, Shopify AI Toolkit, Shopify Dev MCP, Shopify CLI, and Theme Check.
 4. Design the WordPress/CMS workbench layer.

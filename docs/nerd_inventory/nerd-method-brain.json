@@ -1,0 +1,163 @@
+{
+  "generated_at": "2026-05-22T01:23:32Z",
+  "items": [
+    {
+      "domain": "brain-source",
+      "evidence": [
+        "/root/nerd-claude-free-staging"
+      ],
+      "id": "brain-canonical-repo",
+      "kind": "repo",
+      "name": "Brain Canonical Repo",
+      "notes": "Versioned implementation source for NERD-METHOD inventory and sync scripts",
+      "path": "/root/nerd-claude-free-staging",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "brain-codegraph",
+      "evidence": [
+        "http://127.0.0.1:4173"
+      ],
+      "id": "brain-gitnexus",
+      "kind": "service",
+      "name": "GitNexus Code Graph",
+      "notes": "Internal loopback code graph service",
+      "recommended_action": "keep",
+      "risk": "low",
+      "source_url": "http://127.0.0.1:4173",
+      "status": "active"
+    },
+    {
+      "domain": "brain-observability",
+      "evidence": [
+        "http://127.0.0.1:3300"
+      ],
+      "id": "brain-langfuse",
+      "kind": "service",
+      "name": "Langfuse Observability",
+      "notes": "Internal loopback observability service",
+      "recommended_action": "keep",
+      "risk": "low",
+      "source_url": "http://127.0.0.1:3300",
+      "status": "active"
+    },
+    {
+      "domain": "brain-automation",
+      "evidence": [
+        "http://127.0.0.1:5678"
+      ],
+      "id": "brain-n8n",
+      "kind": "service",
+      "name": "n8n Automation",
+      "notes": "Internal loopback automation service",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "source_url": "http://127.0.0.1:5678",
+      "status": "active"
+    },
+    {
+      "domain": "brain-knowledge",
+      "evidence": [
+        "/root/nerd-method"
+      ],
+      "id": "brain-nerd-method",
+      "kind": "repo",
+      "name": "NERD Method Knowledge",
+      "notes": "Knowledge repo expected to hold normalized NERD-METHOD operating material",
+      "path": "/root/nerd-method",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "brain-surface",
+      "evidence": [
+        "/root/obsidian-vault"
+      ],
+      "id": "brain-obsidian-vault",
+      "kind": "dir",
+      "name": "Obsidian Vault",
+      "notes": "markdown_note_count=1",
+      "path": "/root/obsidian-vault",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "brain-surface",
+      "evidence": [
+        "https://agency.umanoff-analytics.space"
+      ],
+      "id": "brain-openwebui-knowledge",
+      "kind": "service",
+      "name": "Open WebUI Knowledge Surface",
+      "notes": "Public knowledge surface; verify seeded docs through controlled sync",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "source_url": "https://agency.umanoff-analytics.space",
+      "status": "investigate"
+    },
+    {
+      "domain": "brain-runtime",
+      "evidence": [
+        "/root/nerd-agency-stack"
+      ],
+      "id": "brain-runtime-stack",
+      "kind": "dir",
+      "name": "Brain Runtime Stack",
+      "notes": "Live runtime target for Mission Control and local brain services",
+      "path": "/root/nerd-agency-stack",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "brain-sync",
+      "evidence": [
+        "/root/nerd-claude-free-staging/scripts/nerd/generate_inventory.py"
+      ],
+      "id": "brain-sync-inventory",
+      "kind": "config",
+      "name": "Inventory Generator",
+      "notes": "Deterministic brain sync target",
+      "path": "/root/nerd-claude-free-staging/scripts/nerd/generate_inventory.py",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "brain-sync",
+      "evidence": [
+        "/root/nerd-claude-free-staging/scripts/nerd/agency/openwebui_seed.py"
+      ],
+      "id": "brain-sync-openwebui-seed",
+      "kind": "config",
+      "name": "Open WebUI Seed Script",
+      "notes": "Deterministic brain sync target",
+      "path": "/root/nerd-claude-free-staging/scripts/nerd/agency/openwebui_seed.py",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "brain-sync",
+      "evidence": [
+        "/root/nerd-agency-stack/scripts/seed-openwebui.sh"
+      ],
+      "id": "brain-sync-stack-seed",
+      "kind": "config",
+      "name": "Runtime Open WebUI Seed Script",
+      "notes": "Deterministic brain sync target",
+      "path": "/root/nerd-agency-stack/scripts/seed-openwebui.sh",
+      "recommended_action": "keep",
+      "risk": "medium",
+      "status": "present"
+    }
+  ],
+  "warnings": [
+    "/root/nerd-method: not a git repository",
+    "/root/obsidian-vault: fewer than two Markdown notes found for the brain surface"
+  ]
+}

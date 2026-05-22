@@ -108,6 +108,8 @@ def test_generate_inventory_main_writes_expected_reports(tmp_path):
         "claudecore-codemap.md",
         "mission-control-stack.json",
         "mission-control-stack.md",
+        "nerd-method-brain.json",
+        "nerd-method-brain.md",
         "next-phase-backlog.md",
     }
     assert expected.issubset({path.name for path in (tmp_path / "reports").iterdir()})

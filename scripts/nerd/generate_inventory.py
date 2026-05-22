@@ -7,6 +7,7 @@ from pathlib import Path
 
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.nerd.inventory.brain import build_brain_report
     from scripts.nerd.inventory.cms import build_cms_candidate_report
     from scripts.nerd.inventory.codemap import build_claudecore_codemap
     from scripts.nerd.inventory.gitinspired import build_gitinspired_catalog
@@ -16,6 +17,7 @@ if __package__ in {None, ""}:
     from scripts.nerd.inventory.skills import KNOWN_SKILL_ROOTS, scan_skill_roots
     from scripts.nerd.inventory.workspace import generated_at, scan_workspace
 else:
+    from .inventory.brain import build_brain_report
     from .inventory.cms import build_cms_candidate_report
     from .inventory.codemap import build_claudecore_codemap
     from .inventory.gitinspired import build_gitinspired_catalog
@@ -30,7 +32,7 @@ def write_backlog(output_dir: Path) -> None:
     lines = [
         "# Next Phase Backlog",
         "",
-        "1. Rebase or merge NERD staged patch stack onto latest `upstream/main`.",
+        "1. Harden unified brain sync across NERD reports, Open WebUI knowledge, Obsidian, GitNexus, n8n, and runtime manifests.",
         (
             "2. Normalize installed WordPress, Shopify, n8n, NotebookLM, "
             "Obsidian, GitHub, data, and security skills into an activation manifest."
@@ -73,6 +75,16 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=Path("/root/nerd-agency-stack"),
     )
+    parser.add_argument(
+        "--nerd-method-dir",
+        type=Path,
+        default=Path("/root/nerd-method"),
+    )
+    parser.add_argument(
+        "--obsidian-vault-dir",
+        type=Path,
+        default=Path("/root/obsidian-vault"),
+    )
     parser.add_argument("--skip-real-skills", action="store_true")
     parser.add_argument("--skip-real-gitinspired-search", action="store_true")
     args = parser.parse_args(argv)
@@ -99,6 +111,13 @@ def main(argv: list[str] | None = None) -> int:
     codemap_report = build_claudecore_codemap(args.staging_dir, args.legacy_dir)
     cms_report = build_cms_candidate_report()
     mission_report = build_mission_control_report(args.agency_stack_dir)
+    brain_report = build_brain_report(
+        args.workspace_root,
+        args.agency_stack_dir,
+        args.staging_dir,
+        args.nerd_method_dir,
+        args.obsidian_vault_dir,
+    )
 
     write_report_pair(
         args.output_dir, "workspace-map", "Workspace Map", workspace_report
@@ -128,6 +147,12 @@ def main(argv: list[str] | None = None) -> int:
         "mission-control-stack",
         "Mission Control Stack",
         mission_report,
+    )
+    write_report_pair(
+        args.output_dir,
+        "nerd-method-brain",
+        "NERD Method Brain",
+        brain_report,
     )
     write_backlog(args.output_dir)
     print(args.output_dir)

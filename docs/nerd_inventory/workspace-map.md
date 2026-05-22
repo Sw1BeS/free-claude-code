@@ -1,6 +1,6 @@
 # Workspace Map
 
-Generated: `2026-05-21T19:39:28Z`
+Generated: `2026-05-22T01:23:26Z`
 
 | ID | Name | Kind | Status | Domain | Risk | Action |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -21,7 +21,7 @@ Generated: `2026-05-21T19:39:28Z`
 | `archive` | archive | archive | archived | workspace | medium | review_later |
 |  | path=/root/archive; notes=size_bytes=2408277565; evidence=/root/archive |  |  |  |  |  |
 | `backups` | backups | dir | present | workspace | unknown | review_later |
-|  | path=/root/backups; notes=size_bytes=49988705; evidence=/root/backups |  |  |  |  |  |
+|  | path=/root/backups; notes=size_bytes=49992705; evidence=/root/backups |  |  |  |  |  |
 | `bash-history` | .bash_history | dir | present | workspace | unknown | review_later |
 |  | path=/root/.bash_history; notes=size_bytes=45647; evidence=/root/.bash_history |  |  |  |  |  |
 | `bashrc` | .bashrc | dir | present | workspace | unknown | review_later |
@@ -33,7 +33,7 @@ Generated: `2026-05-21T19:39:28Z`
 | `cloud-locale-test-skip` | .cloud-locale-test.skip | dir | present | workspace | unknown | review_later |
 |  | path=/root/.cloud-locale-test.skip; notes=size_bytes=0; evidence=/root/.cloud-locale-test.skip |  |  |  |  |  |
 | `codex` | .codex | config | active | workspace | medium | review_later |
-|  | path=/root/.codex; notes=size_bytes=3018583924; evidence=/root/.codex |  |  |  |  |  |
+|  | path=/root/.codex; notes=size_bytes=3030364738; evidence=/root/.codex |  |  |  |  |  |
 | `config` | .config | dir | present | workspace | unknown | review_later |
 |  | path=/root/.config; notes=size_bytes=46553298; evidence=/root/.config |  |  |  |  |  |
 | `docker` | .docker | dir | present | workspace | unknown | review_later |
@@ -43,7 +43,7 @@ Generated: `2026-05-21T19:39:28Z`
 | `dotnet` | .dotnet | dir | present | workspace | unknown | review_later |
 |  | path=/root/.dotnet; notes=size_bytes=238159; evidence=/root/.dotnet |  |  |  |  |  |
 | `fcc` | .fcc | config | active | workspace | medium | review_later |
-|  | path=/root/.fcc; notes=size_bytes=1402450; evidence=/root/.fcc |  |  |  |  |  |
+|  | path=/root/.fcc; notes=size_bytes=1429564; evidence=/root/.fcc |  |  |  |  |  |
 | `free-claude-code` | free-claude-code | repo | legacy | workspace | medium | review_later |
 |  | path=/root/free-claude-code; notes=size_bytes=349963456; branch=main; commit=ff56b3c; dirty=true; remote:origin=https://github.com/Alishahryar1/free-claude-code.git; evidence=/root/free-claude-code |  |  |  |  |  |
 | `gateguard` | .gateguard | dir | present | workspace | unknown | review_later |
@@ -57,9 +57,9 @@ Generated: `2026-05-21T19:39:28Z`
 | `gitnexus` | .gitnexus | config | active | workspace | medium | review_later |
 |  | path=/root/.gitnexus; notes=size_bytes=2608; evidence=/root/.gitnexus |  |  |  |  |  |
 | `hermes` | .hermes | config | active | workspace | medium | review_later |
-|  | path=/root/.hermes; notes=size_bytes=1027602327; evidence=/root/.hermes |  |  |  |  |  |
+|  | path=/root/.hermes; notes=size_bytes=1029198550; evidence=/root/.hermes |  |  |  |  |  |
 | `hermes` | hermes | repo | present | workspace | medium | review_later |
-|  | path=/root/hermes; notes=size_bytes=15805655; branch=master; commit=a075de1; dirty=true; evidence=/root/hermes |  |  |  |  |  |
+|  | path=/root/hermes; notes=size_bytes=15807099; branch=master; commit=a075de1; dirty=true; evidence=/root/hermes |  |  |  |  |  |
 | `hermes-config-backup-20260429-060617-tgz` | hermes-config-backup-20260429-060617.tgz | dir | present | workspace | unknown | review_later |
 |  | path=/root/hermes-config-backup-20260429-060617.tgz; notes=size_bytes=6583; evidence=/root/hermes-config-backup-20260429-060617.tgz |  |  |  |  |  |
 | `hermes-staging` | hermes-staging | dir | present | workspace | unknown | review_later |
@@ -77,7 +77,7 @@ Generated: `2026-05-21T19:39:28Z`
 | `nerd-audit-20260428-235842-tar-gz` | nerd_audit_20260428_235842.tar.gz | dir | present | workspace | unknown | review_later |
 |  | path=/root/nerd_audit_20260428_235842.tar.gz; notes=size_bytes=15915; evidence=/root/nerd_audit_20260428_235842.tar.gz |  |  |  |  |  |
 | `nerd-claude-free-staging` | nerd-claude-free-staging | repo | staged | workspace | low | review_later |
-|  | path=/root/nerd-claude-free-staging; notes=size_bytes=233986161; branch=nerd/safe-upgrade; commit=f9632d1; dirty=true; remote:upstream=https://github.com/Alishahryar1/free-claude-code.git; evidence=/root/nerd-claude-free-staging |  |  |  |  |  |
+|  | path=/root/nerd-claude-free-staging; notes=size_bytes=233988773; branch=nerd/safe-upgrade; commit=f9bef10; dirty=true; remote:upstream=https://github.com/Alishahryar1/free-claude-code.git; evidence=/root/nerd-claude-free-staging |  |  |  |  |  |
 | `nerd-deep-audit-20260429-000823` | nerd_deep_audit_20260429_000823 | dir | present | workspace | unknown | review_later |
 |  | path=/root/nerd_deep_audit_20260429_000823; notes=size_bytes=86057; evidence=/root/nerd_deep_audit_20260429_000823 |  |  |  |  |  |
 | `nerd-deep-audit-20260429-000823-tar-gz` | nerd_deep_audit_20260429_000823.tar.gz | dir | present | workspace | unknown | review_later |
@@ -101,7 +101,7 @@ Generated: `2026-05-21T19:39:28Z`
 | `vscode` | .vscode | dir | present | workspace | unknown | review_later |
 |  | path=/root/.vscode; notes=size_bytes=35; evidence=/root/.vscode |  |  |  |  |  |
 | `vscode-server` | .vscode-server | dir | present | workspace | unknown | review_later |
-|  | path=/root/.vscode-server; notes=size_bytes=1441750213; evidence=/root/.vscode-server |  |  |  |  |  |
+|  | path=/root/.vscode-server; notes=size_bytes=1443289857; evidence=/root/.vscode-server |  |  |  |  |  |
 | `wget-hsts` | .wget-hsts | dir | present | workspace | unknown | review_later |
 |  | path=/root/.wget-hsts; notes=size_bytes=183; evidence=/root/.wget-hsts |  |  |  |  |  |
 | `zshrc` | .zshrc | dir | present | workspace | unknown | review_later |
