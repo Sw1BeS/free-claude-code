@@ -11,6 +11,8 @@ from scripts.nerd.os.runner import (
     DisabledActionError,
     action_summary,
     main,
+    read_recent_runs,
+    render_dashboard_html,
 )
 
 
@@ -71,6 +73,23 @@ def test_runner_executes_allowed_action_and_captures_output(tmp_path):
     assert result.timed_out is False
 
 
+def test_runner_writes_bounded_run_history(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    log_path = tmp_path / "runs.jsonl"
+    write_actions(actions_path)
+    runner = ActionRunner(ActionRegistry.load(actions_path), log_path=log_path)
+
+    runner.run("stack_status")
+    runs = read_recent_runs(log_path, limit=1)
+
+    assert len(runs) == 1
+    assert runs[0]["action_id"] == "stack_status"
+    assert runs[0]["exit_code"] == 0
+    assert runs[0]["risk"] == "low"
+    assert runs[0]["auto_mode"] == "allowed"
+    assert "stdout" not in runs[0]
+
+
 def test_runner_blocks_disabled_action_by_default(tmp_path):
     actions_path = tmp_path / "actions.yaml"
     write_actions(actions_path)
@@ -103,3 +122,21 @@ def test_cli_reports_disabled_action_without_traceback(tmp_path, capsys):
     assert exit_code == 1
     assert "disabled" in captured.out
     assert "Traceback" not in captured.err
+
+
+def test_dashboard_html_exposes_shell_without_commands(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    write_actions(actions_path)
+    registry = ActionRegistry.load(actions_path)
+
+    html = render_dashboard_html(registry)
+
+    assert "NERD OS" in html
+    assert "Command Center" in html
+    assert "stack_status" in html
+    assert "cloakbrowser_start" in html
+    assert "disabled" in html
+    assert "print('ok')" not in html
+    assert "/api/actions" in html
+    assert "/api/run" in html
+    assert "/api/runs" in html

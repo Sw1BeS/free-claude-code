@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import subprocess
 import time
@@ -14,6 +15,7 @@ from typing import Any
 import yaml
 
 DEFAULT_ACTIONS_PATH = Path("/root/nerd-agency-stack/nerd-os.actions.yaml")
+DEFAULT_RUN_LOG_PATH = Path("/root/nerd-method/memory/reports/nerd-os-runs.jsonl")
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 38181
 
@@ -129,8 +131,14 @@ class ActionRegistry:
 
 
 class ActionRunner:
-    def __init__(self, registry: ActionRegistry) -> None:
+    def __init__(
+        self,
+        registry: ActionRegistry,
+        *,
+        log_path: Path = DEFAULT_RUN_LOG_PATH,
+    ) -> None:
         self.registry = registry
+        self.log_path = log_path
 
     def run(self, action_id: str, *, allow_disabled: bool = False) -> ActionResult:
         action = self.registry.get(action_id)
@@ -147,15 +155,17 @@ class ActionRunner:
                 timeout=action.timeout_seconds,
                 check=False,
             )
-            return ActionResult(
+            result = ActionResult(
                 action_id=action.id,
                 exit_code=completed.returncode,
                 stdout=completed.stdout,
                 stderr=completed.stderr,
                 duration_ms=_elapsed_ms(started),
             )
+            append_run_log(self.log_path, action, result)
+            return result
         except subprocess.TimeoutExpired as exc:
-            return ActionResult(
+            result = ActionResult(
                 action_id=action.id,
                 exit_code=124,
                 stdout=exc.stdout or "",
@@ -163,6 +173,8 @@ class ActionRunner:
                 duration_ms=_elapsed_ms(started),
                 timed_out=True,
             )
+            append_run_log(self.log_path, action, result)
+            return result
 
 
 def action_summary(registry: ActionRegistry) -> dict[str, object]:
@@ -190,6 +202,384 @@ def _elapsed_ms(started: float) -> int:
     return int((time.monotonic() - started) * 1000)
 
 
+def append_run_log(log_path: Path, action: Action, result: ActionResult) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "action_id": action.id,
+        "display_name": action.display_name,
+        "group": action.group,
+        "surface": action.surface,
+        "risk": action.risk,
+        "auto_mode": action.auto_mode,
+        "exit_code": result.exit_code,
+        "duration_ms": result.duration_ms,
+        "timed_out": result.timed_out,
+    }
+    with log_path.open("a", encoding="utf-8") as fh:
+        fh.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def read_recent_runs(
+    log_path: Path = DEFAULT_RUN_LOG_PATH,
+    *,
+    limit: int = 25,
+) -> list[dict[str, object]]:
+    if not log_path.is_file():
+        return []
+    lines = log_path.read_text(encoding="utf-8").splitlines()
+    recent = []
+    for line in reversed(lines[-limit:]):
+        if not line.strip():
+            continue
+        recent.append(json.loads(line))
+    return recent
+
+
+def render_dashboard_html(registry: ActionRegistry) -> str:
+    surfaces = registry.surfaces()
+    actions = {action.id: action for action in registry.actions()}
+    nav = "\n".join(
+        f'<button class="surface-tab" data-surface="{html.escape(surface)}">'
+        f"{html.escape(_surface_label(surface))}"
+        f"<span>{len(action_ids)}</span></button>"
+        for surface, action_ids in surfaces.items()
+    )
+    cards = []
+    for surface, action_ids in surfaces.items():
+        for action_id in action_ids:
+            action = actions[action_id]
+            cards.append(
+                f"""
+                <article class="module-card" data-surface="{html.escape(surface)}">
+                  <div>
+                    <p class="eyebrow">{html.escape(action.group)}</p>
+                    <h2>{html.escape(action.display_name)}</h2>
+                    <p class="action-id">{html.escape(action.id)}</p>
+                  </div>
+                  <div class="module-meta">
+                    <span class="pill risk-{html.escape(action.risk)}">{html.escape(action.risk)}</span>
+                    <span class="pill mode-{html.escape(action.auto_mode)}">{html.escape(action.auto_mode)}</span>
+                    <span class="pill">{action.timeout_seconds}s</span>
+                  </div>
+                  <button class="run-button" data-action="{html.escape(action.id)}"
+                    {"disabled" if action.auto_mode != "allowed" else ""}>
+                    {"Blocked" if action.auto_mode != "allowed" else "Run"}
+                  </button>
+                </article>
+                """
+            )
+    cards_html = "\n".join(cards)
+    initial_payload = json.dumps(action_summary(registry), ensure_ascii=False)
+    escaped_payload = html.escape(initial_payload)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NERD OS</title>
+  <style>
+    :root {{
+      color-scheme: dark;
+      --bg: #07090d;
+      --panel: #101620;
+      --panel-2: #151d2a;
+      --line: #263245;
+      --text: #eef3fb;
+      --muted: #8b99ad;
+      --green: #41d392;
+      --amber: #e3b341;
+      --red: #ef626c;
+      --blue: #6ea8fe;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    .shell {{
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr) 420px;
+      min-height: 100vh;
+    }}
+    aside, main, .console {{
+      border-right: 1px solid var(--line);
+    }}
+    aside {{
+      padding: 20px 16px;
+      background: #080d13;
+    }}
+    .brand {{
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 24px;
+    }}
+    .brand strong {{ font-size: 18px; }}
+    .brand span {{ color: var(--muted); font-size: 12px; }}
+    .surface-tab {{
+      width: 100%;
+      min-height: 40px;
+      margin-bottom: 8px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-radius: 7px;
+      cursor: pointer;
+      text-align: left;
+    }}
+    .surface-tab.active {{
+      border-color: var(--blue);
+      background: #13233a;
+    }}
+    main {{
+      min-width: 0;
+      padding: 22px;
+    }}
+    .topbar {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }}
+    h1 {{
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0;
+    }}
+    .status-row {{
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }}
+    .pill {{
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 8px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      color: var(--muted);
+      font-size: 12px;
+    }}
+    .risk-low, .mode-allowed {{ color: var(--green); border-color: rgba(65, 211, 146, .45); }}
+    .risk-medium {{ color: var(--amber); border-color: rgba(227, 179, 65, .45); }}
+    .risk-high, .mode-disabled {{ color: var(--red); border-color: rgba(239, 98, 108, .45); }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 12px;
+    }}
+    .module-card {{
+      min-height: 178px;
+      padding: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }}
+    .eyebrow {{
+      margin: 0 0 6px;
+      color: var(--blue);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }}
+    h2 {{
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+      line-height: 1.25;
+    }}
+    .action-id {{
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }}
+    .module-meta {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }}
+    .run-button {{
+      height: 38px;
+      border: 0;
+      border-radius: 7px;
+      background: var(--blue);
+      color: #06101f;
+      font-weight: 700;
+      cursor: pointer;
+    }}
+    .run-button:disabled {{
+      background: #2b3341;
+      color: #9ba6b8;
+      cursor: not-allowed;
+    }}
+    .console {{
+      padding: 22px;
+      background: #090d14;
+      min-width: 0;
+    }}
+    .console h2 {{
+      font-size: 15px;
+      margin-bottom: 12px;
+    }}
+    .history {{
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }}
+    .history-row {{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+    }}
+    .history-row strong {{
+      color: var(--text);
+      overflow-wrap: anywhere;
+    }}
+    pre {{
+      min-height: 420px;
+      max-height: calc(100vh - 120px);
+      overflow: auto;
+      margin: 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #05070b;
+      color: #d7e0ee;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }}
+    @media (max-width: 1100px) {{
+      .shell {{ grid-template-columns: 220px minmax(0, 1fr); }}
+      .console {{ grid-column: 1 / -1; border-top: 1px solid var(--line); }}
+    }}
+    @media (max-width: 760px) {{
+      .shell {{ display: block; }}
+      aside {{ border-bottom: 1px solid var(--line); }}
+      main, .console {{ padding: 16px; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside>
+      <div class="brand">
+        <strong>NERD OS</strong>
+        <span>Mission Control Kernel</span>
+      </div>
+      <nav>{nav}</nav>
+    </aside>
+    <main>
+      <div class="topbar">
+        <h1 id="surfaceTitle">Command Center</h1>
+        <div class="status-row">
+          <span class="pill" id="moduleCount">{len(registry.actions())} modules</span>
+          <span class="pill">policy gated</span>
+        </div>
+      </div>
+      <section class="grid" id="moduleGrid">{cards_html}</section>
+    </main>
+    <section class="console">
+      <h2>Run Console</h2>
+      <pre id="output">Ready. Select a runnable module.</pre>
+      <h2>Recent Runs</h2>
+      <div class="history" id="runHistory"></div>
+    </section>
+  </div>
+  <script type="application/json" id="registry-data">{escaped_payload}</script>
+  <script>
+    const registry = JSON.parse(document.getElementById('registry-data').textContent);
+    const basePath = location.pathname.startsWith('/nerd-os') ? '/nerd-os' : '';
+    const output = document.getElementById('output');
+    const history = document.getElementById('runHistory');
+    const tabs = [...document.querySelectorAll('.surface-tab')];
+    const cards = [...document.querySelectorAll('.module-card')];
+    const title = document.getElementById('surfaceTitle');
+
+    function label(surface) {{
+      return surface.split('_').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+    }}
+    function selectSurface(surface) {{
+      tabs.forEach(tab => tab.classList.toggle('active', tab.dataset.surface === surface));
+      cards.forEach(card => card.hidden = card.dataset.surface !== surface);
+      title.textContent = label(surface);
+    }}
+    tabs.forEach(tab => tab.addEventListener('click', () => selectSurface(tab.dataset.surface)));
+    if (tabs.length) selectSurface(tabs[0].dataset.surface);
+
+    document.querySelectorAll('.run-button:not([disabled])').forEach(button => {{
+      button.addEventListener('click', async () => {{
+        const id = button.dataset.action;
+        output.textContent = `Running ${{id}}...`;
+        button.disabled = true;
+        try {{
+          const response = await fetch(`${{basePath}}/api/run`, {{
+            method: 'POST',
+            headers: {{'Content-Type': 'application/json'}},
+            body: JSON.stringify({{id}})
+          }});
+          const data = await response.json();
+          output.textContent = JSON.stringify(data, null, 2);
+          await refreshRuns();
+        }} catch (error) {{
+          output.textContent = String(error);
+        }} finally {{
+          button.disabled = false;
+        }}
+      }});
+    }});
+
+    async function refreshRuns() {{
+      try {{
+        const response = await fetch(`${{basePath}}/api/runs`);
+        const data = await response.json();
+        const rows = (data.items || []).slice(0, 8).map(item => `
+          <div class="history-row">
+            <div><strong>${{item.action_id}}</strong><br>${{item.timestamp || ''}}</div>
+            <span class="pill">${{item.exit_code}}</span>
+          </div>
+        `).join('');
+        history.innerHTML = rows || '<span class="pill">no runs yet</span>';
+      }} catch (error) {{
+        history.innerHTML = '<span class="pill">history unavailable</span>';
+      }}
+    }}
+
+    fetch(`${{basePath}}/api/actions`).catch(() => null);
+    refreshRuns();
+  </script>
+</body>
+</html>
+"""
+
+
+def _surface_label(surface: str) -> str:
+    return " ".join(part.capitalize() for part in surface.split("_"))
+
+
 def serve(
     *,
     actions_path: Path = DEFAULT_ACTIONS_PATH,
@@ -201,11 +591,17 @@ def serve(
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
+            if self.path in {"/", "/index.html"}:
+                self._html(render_dashboard_html(registry))
+                return
             if self.path == "/health":
                 self._json({"status": "ok", "actions": len(registry.actions())})
                 return
             if self.path == "/api/actions":
                 self._json(action_summary(registry))
+                return
+            if self.path == "/api/runs":
+                self._json({"items": read_recent_runs()})
                 return
             self.send_error(HTTPStatus.NOT_FOUND)
 
@@ -238,6 +634,19 @@ def serve(
             body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
             self.send_response(status)
             self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _html(
+            self,
+            markup: str,
+            *,
+            status: HTTPStatus = HTTPStatus.OK,
+        ) -> None:
+            body = markup.encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)

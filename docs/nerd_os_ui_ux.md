@@ -36,6 +36,8 @@ The first executable kernel is `nerd-os`:
 
 - `nerd-os list` exposes the module/action registry.
 - `nerd-os run <action_id>` runs only allowlisted actions.
-- `nerd-os serve` exposes a loopback API at `127.0.0.1:38181`.
+- `nerd-os serve` exposes an internal Docker-network API at `172.20.0.1:38181`.
+- `https://agency.umanoff-analytics.space/nerd-os/` exposes the first protected dashboard.
+- `/api/runs` exposes recent run history without storing stdout/stderr in the summary log.
 
 Open WebUI and n8n should call this runner instead of directly shelling out to random tools.
