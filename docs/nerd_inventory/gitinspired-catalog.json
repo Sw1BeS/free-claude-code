@@ -1,29 +1,41 @@
 {
-  "generated_at": "2026-05-22T01:23:27Z",
+  "generated_at": "2026-05-22T06:03:20Z",
   "items": [
     {
       "domain": "routing",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/9router",
+        "/root/nerd-method/tools/git-inspired/9router/images/9router.png",
+        "/root/nerd-method/tools/git-inspired/9router/skills/9router",
+        "/root/nerd-method/tools/git-inspired/9router/skills/9router-embeddings",
+        "/root/nerd-method/tools/git-inspired/9router/skills/9router-image",
+        "/root/nerd-method/tools/git-inspired/9router/skills/9router-stt",
+        "/root/nerd-method/tools/git-inspired/9router/skills/9router-tts",
+        "/root/nerd-method/tools/git-inspired/9router/skills/9router-web-search"
+      ],
       "id": "gitinspired-9router",
       "kind": "candidate",
       "name": "9router",
-      "notes": "No strong local evidence found in configured search roots.",
-      "recommended_action": "install_later",
+      "notes": "Local evidence found; review before installing anything new.",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/decolua/9router",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "agents",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/agency-agents",
+        "/root/nerd-method/tools/git-inspired/agency-agents/integrations/antigravity/agency-agents-orchestrator"
+      ],
       "id": "gitinspired-agency-agents",
       "kind": "candidate",
       "name": "agency-agents",
       "notes": "Agent-role pack candidate for reusable role definitions; not a runtime service.",
-      "recommended_action": "install_later",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/msitarzewski/agency-agents",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "skills",
@@ -44,7 +56,13 @@
       "domain": "github",
       "evidence": [
         "/root/.agents/plugins/skills/copilot-sdk",
-        "/root/.claude/skills/skills/copilot-sdk"
+        "/root/.claude/skills/skills/copilot-sdk",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/commands/copilot.rs",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/proxy/copilot_optimizer.rs",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/proxy/providers/copilot_auth.rs",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/proxy/providers/copilot_model_map.rs",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src/lib/api/copilot.ts",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src/lib/query/copilot.ts"
       ],
       "id": "gitinspired-awesome-copilot",
       "kind": "candidate",
@@ -88,9 +106,11 @@
         "/root/.agents/plugins/skills/openclaw-github-repo-commander",
         "/root/.claude/skills/skills/openclaw-github-repo-commander",
         "/root/.hermes/skills/openclaw-imports",
-        "/root/hermes/archive/legacy_root/hermes-evolution-rollback-repo/backups/legacy-openclaw-pre-stop-sha256sums.txt",
-        "/root/nerd-method/departments/system-development/archive/legacy_root/hermes-evolution-rollback-repo/backups/legacy-openclaw-pre-stop-sha256sums.txt",
-        "/root/nerd-method/nerd-agency/nerd-departments/nerd-system-development/archive/legacy_root/hermes-evolution-rollback-repo/backups/legacy-openclaw-pre-stop-sha256sums.txt"
+        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/commands/openclaw.rs",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/openclaw_config.rs",
+        "/root/nerd-method/tools/git-inspired/cc-switch/src-tauri/src/session_manager/providers/openclaw.rs",
+        "/root/nerd-method/tools/git-inspired/cc-switch/tests/components/openclaw.utils.test.ts",
+        "/root/nerd-method/tools/git-inspired/cc-switch/tests/config/therouterOpenCodeOpenClawPresets.test.ts"
       ],
       "id": "gitinspired-awesome-openclaw-skills",
       "kind": "candidate",
@@ -103,39 +123,58 @@
     },
     {
       "domain": "desktop-control",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/cc-switch",
+        "/root/nerd-method/tools/git-inspired/cc-switch/cc-switch-main",
+        "/root/nerd-method/tools/git-inspired/cc-switch/flatpak/com.ccswitch.desktop.desktop",
+        "/root/nerd-method/tools/git-inspired/cc-switch/flatpak/com.ccswitch.desktop.metainfo.xml",
+        "/root/nerd-method/tools/git-inspired/cc-switch/flatpak/com.ccswitch.desktop.yml"
+      ],
       "id": "gitinspired-cc-switch",
       "kind": "candidate",
       "name": "cc-switch",
       "notes": "Desktop all-in-one assistant candidate for Claude Code, Codex, OpenCode, OpenClaw, Gemini CLI, and Hermes Agent workflows.",
-      "recommended_action": "install_later",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/farion1231/cc-switch",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "browser-automation",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/9router/open-sse/utils/claudeCloaking.js",
+        "/root/nerd-method/tools/git-inspired/CloakBrowser",
+        "/root/nerd-method/tools/git-inspired/CloakBrowser/bin/cloakserve",
+        "/root/nerd-method/tools/git-inspired/CloakBrowser/bin/cloaktest",
+        "/root/nerd-method/tools/git-inspired/CloakBrowser/cloakbrowser",
+        "/root/nerd-method/tools/git-inspired/CloakBrowser/tests/test_cloakserve.py"
+      ],
       "id": "gitinspired-cloakbrowser",
       "kind": "candidate",
       "name": "CloakBrowser",
       "notes": "Playwright/Puppeteer-compatible stealth browser; high-risk automation candidate that should remain disabled by default until policy reviewed.",
-      "recommended_action": "install_later",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/CloakHQ/CloakBrowser",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "code-graph",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/bin/codegraph",
+        "/root/nerd-method/tools/git-inspired/codegraph",
+        "/root/nerd-method/tools/git-inspired/codegraph/.cursor/rules/codegraph.mdc",
+        "/root/nerd-method/tools/git-inspired/codegraph/src/bin/codegraph.ts",
+        "/root/nerd-method/tools/node-global/bin/codegraph"
+      ],
       "id": "gitinspired-codegraph",
       "kind": "candidate",
       "name": "codegraph",
       "notes": "Local code knowledge graph candidate with CLI/MCP tools for search, context, callers, and impact analysis.",
-      "recommended_action": "install_later",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/colbymchenry/codegraph",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "skills",
@@ -157,7 +196,10 @@
       "domain": "scraping",
       "evidence": [
         "/root/.agents/plugins/skills/firecrawl-scraper",
-        "/root/.claude/skills/skills/firecrawl-scraper"
+        "/root/.claude/skills/skills/firecrawl-scraper",
+        "/root/nerd-method/tools/git-inspired/9router/public/providers/firecrawl.png",
+        "/root/nerd-method/tools/git-inspired/CloakBrowser/examples/integrations/crawl4ai_example.py",
+        "/root/nerd-method/tools/git-inspired/CloakBrowser/examples/integrations/crawlee_example.py"
       ],
       "id": "gitinspired-crawl4ai",
       "kind": "candidate",
@@ -286,21 +328,33 @@
     },
     {
       "domain": "google",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/notebooklm-py",
+        "/root/nerd-method/tools/git-inspired/notebooklm-py/notebooklm-py.png",
+        "/root/nerd-method/tools/python/notebooklm-py-venv",
+        "/root/nerd-method/tools/python/notebooklm-py-venv/lib/python3.14/site-packages/_editable_impl_notebooklm_py.pth",
+        "/root/nerd-method/tools/python/notebooklm-py-venv/lib/python3.14/site-packages/notebooklm_py-0.5.0.dist-info"
+      ],
       "id": "gitinspired-notebooklm-py",
       "kind": "candidate",
       "name": "notebooklm-py",
       "notes": "Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation.",
-      "recommended_action": "install_later",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/teng-lin/notebooklm-py",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "google",
       "evidence": [
         "/root/.agents/plugins/skills/notebooklm",
-        "/root/.claude/skills/skills/notebooklm"
+        "/root/.claude/skills/skills/notebooklm",
+        "/root/nerd-method/tools/git-inspired/notebooklm-py",
+        "/root/nerd-method/tools/git-inspired/notebooklm-py/notebooklm-py.png",
+        "/root/nerd-method/tools/git-inspired/notebooklm-py/src/notebooklm",
+        "/root/nerd-method/tools/git-inspired/notebooklm-py/src/notebooklm/notebooklm_cli.py",
+        "/root/nerd-method/tools/git-inspired/notebooklm-py/tests/fixtures/notebooklm_html.html",
+        "/root/nerd-method/tools/python/notebooklm-py-venv"
       ],
       "id": "gitinspired-notebooklm-skill",
       "kind": "candidate",
@@ -361,15 +415,24 @@
     },
     {
       "domain": "agents",
-      "evidence": [],
+      "evidence": [
+        "/root/nerd-method/tools/git-inspired/ruflo",
+        "/root/nerd-method/tools/git-inspired/ruflo/ruflo",
+        "/root/nerd-method/tools/git-inspired/ruflo/ruflo-plugins.gif",
+        "/root/nerd-method/tools/git-inspired/ruflo/v3/@claude-flow",
+        "/root/nerd-method/tools/git-inspired/ruflo/v3/crates/ruflo-federation-peer",
+        "/root/nerd-method/tools/git-inspired/ruflo/v3/implementation/adrs/ADR-046-ruflo-rebrand.md",
+        "/root/nerd-method/tools/git-inspired/ruflo/v3/implementation/adrs/ADR-058-self-contained-ruflo-rvf-appliance.md",
+        "/root/nerd-method/tools/git-inspired/ruflo/v3/implementation/planning/CLAUDE-FLOW-V3-MASTER-PLAN.md"
+      ],
       "id": "gitinspired-ruflo",
       "kind": "candidate",
       "name": "ruflo",
       "notes": "Multi-agent orchestration candidate for Claude Code with MCP, server, plugin, memory, and swarm capabilities.",
-      "recommended_action": "install_later",
+      "recommended_action": "normalize",
       "risk": "unknown",
       "source_url": "https://github.com/ruvnet/ruflo",
-      "status": "missing"
+      "status": "present"
     },
     {
       "domain": "github",

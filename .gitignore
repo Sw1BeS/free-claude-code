@@ -12,6 +12,7 @@ server.log
 /server.*.log
 debug-*.log
 .coverage
+.codegraph/
 llama_cache
 .smoke-results
 .vscode

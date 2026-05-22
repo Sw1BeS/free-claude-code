@@ -18,6 +18,7 @@ SeedKind = Literal["prompt", "memory", "knowledge", "knowledge_file"]
 BASE_URL = "http://127.0.0.1:38080"
 STACK_DIR = Path("/root/nerd-agency-stack")
 STAGING_DIR = Path("/root/nerd-claude-free-staging")
+NERD_METHOD_DIR = Path("/root/nerd-method")
 ADMIN_CREDENTIALS = STACK_DIR / "admin-credentials.txt"
 DEFAULT_REQUEST_TIMEOUT_SECONDS = 30
 KNOWLEDGE_REQUEST_TIMEOUT_SECONDS = 240
@@ -245,6 +246,7 @@ def mission_control_knowledge_base() -> KnowledgeSeed:
 def mission_control_knowledge_documents(
     stack_dir: Path = STACK_DIR,
     staging_dir: Path = STAGING_DIR,
+    nerd_method_dir: Path = NERD_METHOD_DIR,
 ) -> list[KnowledgeDocument]:
     sources = [
         (stack_dir, Path("README.md")),
@@ -258,6 +260,20 @@ def mission_control_knowledge_documents(
         (staging_dir, Path("docs/nerd_inventory/nerd-method-brain.md")),
         (staging_dir, Path("docs/nerd_inventory/next-phase-backlog.md")),
     ]
+    if stack_dir == STACK_DIR and staging_dir == STAGING_DIR:
+        sources.extend(
+            [
+                (nerd_method_dir.parent, Path("nerd-method/README.md")),
+                (nerd_method_dir.parent, Path("nerd-method/memory/README.md")),
+                (
+                    nerd_method_dir.parent,
+                    Path(
+                        "nerd-method/memory/knowledge/"
+                        "nerd-method-operating-model.md"
+                    ),
+                ),
+            ]
+        )
     documents = []
     for root, relative in sources:
         path = root / relative
@@ -399,6 +415,16 @@ def plan_knowledge_file_changes(
     desired_docs: Sequence[KnowledgeDocument],
 ) -> list[SeedChange]:
     existing_by_filename = {file.get("filename", ""): file for file in existing_files}
+    existing_by_source_path = {
+        source_path: file
+        for file in existing_files
+        if (source_path := file_source_path(file)) is not None
+    }
+    existing_by_digest = {
+        digest: file
+        for file in existing_files
+        if (digest := file_content_sha256(file)) is not None
+    }
     changes: list[SeedChange] = []
     for doc in desired_docs:
         payload: dict[str, object] = {
@@ -407,6 +433,30 @@ def plan_knowledge_file_changes(
         }
         existing = existing_by_filename.get(doc.filename)
         if existing is None:
+            digest_match = existing_by_digest.get(doc.content_sha256)
+            if digest_match is not None:
+                changes.append(
+                    SeedChange(
+                        kind="knowledge_file",
+                        action="keep",
+                        key=doc.filename,
+                        payload=payload,
+                        object_id=digest_match.get("id"),
+                    )
+                )
+                continue
+            source_match = existing_by_source_path.get(str(doc.path))
+            if source_match is not None:
+                changes.append(
+                    SeedChange(
+                        kind="knowledge_file",
+                        action="update",
+                        key=doc.filename,
+                        payload=payload,
+                        object_id=source_match.get("id"),
+                    )
+                )
+                continue
             changes.append(
                 SeedChange(
                     kind="knowledge_file",
@@ -567,11 +617,15 @@ class OpenWebUISeedClient:
         file_id = existing.get("id") if existing else None
         if not file_id:
             file_id = self.upload_document(doc)
-        self._request(
-            "POST",
-            f"/api/v1/knowledge/{knowledge_id}/file/add",
-            {"file_id": file_id},
-        )
+        try:
+            self._request(
+                "POST",
+                f"/api/v1/knowledge/{knowledge_id}/file/add",
+                {"file_id": file_id},
+            )
+        except RuntimeError as exc:
+            if not is_duplicate_content_error(exc):
+                raise
         return file_id
 
     def replace_document_in_knowledge(
@@ -583,11 +637,15 @@ class OpenWebUISeedClient:
             {"file_id": file_id},
         )
         new_file_id = self.upload_document(doc)
-        self._request(
-            "POST",
-            f"/api/v1/knowledge/{knowledge_id}/file/add",
-            {"file_id": new_file_id},
-        )
+        try:
+            self._request(
+                "POST",
+                f"/api/v1/knowledge/{knowledge_id}/file/add",
+                {"file_id": new_file_id},
+            )
+        except RuntimeError as exc:
+            if not is_duplicate_content_error(exc):
+                raise
         return new_file_id
 
     def upload_document(self, doc: KnowledgeDocument) -> str:
@@ -772,6 +830,10 @@ def request_json(
     return json.loads(raw)
 
 
+def is_duplicate_content_error(exc: RuntimeError) -> bool:
+    return "Duplicate content detected" in str(exc)
+
+
 def load_admin_credentials(path: Path = ADMIN_CREDENTIALS) -> tuple[str, str]:
     values: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -852,6 +914,10 @@ def _find_memory_by_marker(
 
 def file_content_sha256(file: OpenWebUIObject) -> str | None:
     return _find_string_value(file, "content_sha256")
+
+
+def file_source_path(file: OpenWebUIObject) -> str | None:
+    return _find_string_value(file, "source_path")
 
 
 def _find_string_value(value: object, key: str) -> str | None:

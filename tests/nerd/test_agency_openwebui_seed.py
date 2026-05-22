@@ -318,6 +318,54 @@ def test_knowledge_file_plan_keeps_attached_doc_with_matching_digest(tmp_path):
     assert plan[0].object_id == "file-id"
 
 
+def test_knowledge_file_plan_keeps_same_digest_under_old_filename(tmp_path):
+    seed = load_module("agency_openwebui_seed_digest_alias", SEED_PATH)
+    doc_path = tmp_path / "new-name.md"
+    doc_path.write_text("same content", encoding="utf-8")
+    doc = seed.KnowledgeDocument.from_path(doc_path, source_root=tmp_path)
+
+    plan = seed.plan_knowledge_file_changes(
+        [
+            {
+                "id": "file-id",
+                "filename": "old-name.md",
+                "meta": {"data": {"content_sha256": doc.content_sha256}},
+            }
+        ],
+        [doc],
+    )
+
+    assert len(plan) == 1
+    assert plan[0].kind == "knowledge_file"
+    assert plan[0].action == "keep"
+    assert plan[0].key == doc.filename
+    assert plan[0].object_id == "file-id"
+
+
+def test_knowledge_file_plan_updates_stale_filename_by_source_path(tmp_path):
+    seed = load_module("agency_openwebui_seed_source_alias", SEED_PATH)
+    doc_path = tmp_path / "stable-name.md"
+    doc_path.write_text("fresh content", encoding="utf-8")
+    doc = seed.KnowledgeDocument.from_path(doc_path, source_root=tmp_path)
+
+    plan = seed.plan_knowledge_file_changes(
+        [
+            {
+                "id": "stale-id",
+                "filename": "old-hashed-name.md",
+                "meta": {"data": {"source_path": str(doc.path)}},
+            }
+        ],
+        [doc],
+    )
+
+    assert len(plan) == 1
+    assert plan[0].kind == "knowledge_file"
+    assert plan[0].action == "update"
+    assert plan[0].key == doc.filename
+    assert plan[0].object_id == "stale-id"
+
+
 def test_knowledge_file_plan_updates_attached_doc_with_missing_or_old_digest(tmp_path):
     seed = load_module("agency_openwebui_seed_knowledge_file_plan_update", SEED_PATH)
     missing_digest_path = tmp_path / "missing.md"
@@ -363,6 +411,16 @@ def test_file_digest_helper_reads_nested_openwebui_metadata():
         == "def456"
     )
     assert seed.file_content_sha256({"meta": {"data": {}}}) is None
+
+
+def test_file_source_path_helper_reads_nested_openwebui_metadata():
+    seed = load_module("agency_openwebui_seed_source_path_helper", SEED_PATH)
+
+    assert (
+        seed.file_source_path({"meta": {"data": {"source_path": "/tmp/a.md"}}})
+        == "/tmp/a.md"
+    )
+    assert seed.file_source_path({"meta": {"data": {}}}) is None
 
 
 def test_apply_knowledge_documents_updates_stale_attachment_and_keeps_current(
@@ -461,6 +519,38 @@ def test_add_document_to_knowledge_reuses_only_matching_global_digest(tmp_path):
         "/api/v1/knowledge/knowledge-id/file/add",
         {"file_id": "matching-id"},
     ) in client.requests
+
+
+def test_add_document_to_knowledge_treats_duplicate_content_as_existing(tmp_path):
+    seed = load_module("agency_openwebui_seed_duplicate_doc", SEED_PATH)
+    doc_path = tmp_path / "report.md"
+    doc_path.write_text("current", encoding="utf-8")
+    doc = seed.KnowledgeDocument.from_path(doc_path, source_root=tmp_path)
+
+    class FakeClient(seed.OpenWebUISeedClient):
+        def __init__(self):
+            super().__init__("http://openwebui.test", "token")
+            self.uploaded = []
+
+        def _request(self, method, path, payload=None):
+            if method == "GET":
+                return []
+            raise RuntimeError(
+                "Open WebUI request failed: 400 http://openwebui.test: "
+                '{"detail":"400: Duplicate content detected. '
+                'Please provide unique content to proceed."}'
+            )
+
+        def upload_document(self, doc):
+            self.uploaded.append(doc.filename)
+            return "uploaded-id"
+
+    client = FakeClient()
+
+    file_id = client.add_document_to_knowledge("knowledge-id", doc)
+
+    assert file_id == "uploaded-id"
+    assert client.uploaded == [doc.filename]
 
 
 def test_upload_document_includes_seed_metadata_and_digest(tmp_path, monkeypatch):
