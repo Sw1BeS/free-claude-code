@@ -109,6 +109,25 @@ def test_mission_control_memories_are_marker_based_and_idempotent():
     }
 
 
+def test_knowledge_prompt_and_memory_name_versioned_reports_as_canonical_source():
+    seed = load_module("agency_openwebui_seed_knowledge_canonical", SEED_PATH)
+
+    prompts = seed.mission_control_prompts()
+    knowledge_prompt = next(
+        prompt for prompt in prompts if prompt.command == "knowledge_vault"
+    )
+    knowledge_memory = next(
+        memory
+        for memory in seed.mission_control_memories()
+        if memory.marker == "[NERD-AGENCY memory:knowledge]"
+    )
+
+    for content in (knowledge_prompt.content, knowledge_memory.content):
+        assert "versioned NERD reports plus runtime sync targets" in content
+        assert "not scattered chat memory" in content
+        assert "secret" not in content.lower()
+
+
 def test_seed_summary_contains_actions_without_credentials():
     seed = load_module("agency_openwebui_seed_summary", SEED_PATH)
     changes = [
@@ -161,6 +180,45 @@ def test_knowledge_seed_collects_existing_docs_with_stable_hashed_filenames(tmp_
         "manifest" in filename and filename.endswith(".yaml") for filename in filenames
     )
     assert docs == seed.mission_control_knowledge_documents(stack_dir, staging_dir)
+
+
+def test_knowledge_seed_collects_brain_report_when_present(tmp_path):
+    seed = load_module("agency_openwebui_seed_brain_docs", SEED_PATH)
+    stack_dir = tmp_path / "stack"
+    staging_dir = tmp_path / "staging"
+    inventory_dir = staging_dir / "docs" / "nerd_inventory"
+    stack_dir.mkdir(parents=True)
+    inventory_dir.mkdir(parents=True)
+    (inventory_dir / "nerd-method-brain.md").write_text(
+        "# NERD-METHOD Brain\n",
+        encoding="utf-8",
+    )
+    (inventory_dir / "workspace-map.md").write_text(
+        "# Workspace Map\n",
+        encoding="utf-8",
+    )
+
+    docs = seed.mission_control_knowledge_documents(stack_dir, staging_dir)
+    filenames = {doc.filename for doc in docs}
+
+    assert len(docs) == 2
+    assert any("nerd-method-brain" in filename for filename in filenames)
+    assert any("workspace-map" in filename for filename in filenames)
+
+
+def test_knowledge_base_description_names_shared_brain_surfaces():
+    seed = load_module("agency_openwebui_seed_knowledge_description", SEED_PATH)
+
+    description = seed.mission_control_knowledge_base().description
+
+    for phrase in (
+        "NERD-METHOD shared brain",
+        "GitNexus",
+        "Obsidian",
+        "NotebookLM",
+        "n8n",
+    ):
+        assert phrase in description
 
 
 def test_knowledge_base_upsert_plan_uses_name_as_identity():

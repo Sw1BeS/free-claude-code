@@ -154,11 +154,12 @@ def mission_control_prompts() -> list[PromptSeed]:
             name="NERD Knowledge Vault",
             tags=(*shared_tags, "memory", "knowledge"),
             content=(
-                "Treat the knowledge vault as the unified memory surface: "
-                "Open WebUI knowledge, NERD inventory, Obsidian, NotebookLM, "
-                "prompt library, client/project context, implementation "
-                "reports, n8n execution notes, Langfuse traces, and GitNexus "
-                "analysis should be referenced through this workspace."
+                "Treat the knowledge vault as the unified memory surface. "
+                "The canonical source is versioned NERD reports plus runtime "
+                "sync targets, not scattered chat memory. Reference Open "
+                "WebUI knowledge, Obsidian, NotebookLM, prompt library, "
+                "client/project context, n8n execution notes, Langfuse "
+                "traces, and GitNexus analysis through this workspace."
             ),
         ),
         PromptSeed(
@@ -203,10 +204,12 @@ def mission_control_memories() -> list[MemorySeed]:
             marker="[NERD-AGENCY memory:knowledge]",
             content=(
                 "[NERD-AGENCY memory:knowledge]\n"
-                "Unified memory includes Open WebUI knowledge, Obsidian, "
-                "NotebookLM, NERD inventory reports, prompt library, reusable "
-                "skills, activation packs, project docs, GitHub/GitNexus notes, "
-                "Langfuse traces, Grafana links, and n8n execution history."
+                "The canonical source is versioned NERD reports plus runtime "
+                "sync targets, not scattered chat memory. Unified memory "
+                "includes Open WebUI knowledge, Obsidian, NotebookLM, prompt "
+                "library, reusable skills, activation packs, project docs, "
+                "GitHub/GitNexus notes, Langfuse traces, Grafana links, and "
+                "n8n execution history."
             ),
         ),
         MemorySeed(
@@ -226,9 +229,11 @@ def mission_control_knowledge_base() -> KnowledgeSeed:
     return KnowledgeSeed(
         name="NERD Agency Mission Control",
         description=(
-            "Canonical NERD Agency operating knowledge: stack README, "
-            "manifest, domain map, Mission Control architecture notes, "
-            "inventory reports, CMS candidates, skill catalog, and backlog."
+            "Canonical NERD Agency operating knowledge for the NERD-METHOD "
+            "shared brain: stack README, manifest, domain map, Mission "
+            "Control architecture notes, inventory reports, GitNexus, "
+            "Obsidian, NotebookLM, n8n, CMS candidates, skill catalog, and "
+            "backlog."
         ),
     )
 
@@ -246,6 +251,8 @@ def mission_control_knowledge_documents(
         (staging_dir, Path("docs/nerd_inventory/cms-candidates.md")),
         (staging_dir, Path("docs/nerd_inventory/skills-inventory.md")),
         (staging_dir, Path("docs/nerd_inventory/gitinspired-catalog.md")),
+        (staging_dir, Path("docs/nerd_inventory/nerd-method-brain.md")),
+        (staging_dir, Path("docs/nerd_inventory/workspace-map.md")),
         (staging_dir, Path("docs/nerd_inventory/next-phase-backlog.md")),
     ]
     documents = []
