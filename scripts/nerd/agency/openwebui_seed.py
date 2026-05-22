@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 from collections.abc import Sequence
@@ -85,12 +84,11 @@ class KnowledgeDocument:
     @classmethod
     def from_path(cls, path: Path, *, source_root: Path) -> KnowledgeDocument:
         rel_path = _relative_path(path, source_root)
-        digest = hashlib.sha256(path.read_bytes()).hexdigest()[:12]
         stem = _slug_path(rel_path.with_suffix(""))
         suffix = path.suffix or ".txt"
         return cls(
             path=path,
-            filename=f"nerd-agency--{stem}--{digest}{suffix}",
+            filename=f"nerd-agency--{stem}{suffix}",
             content_type=_content_type(path),
         )
 
@@ -252,7 +250,6 @@ def mission_control_knowledge_documents(
         (staging_dir, Path("docs/nerd_inventory/skills-inventory.md")),
         (staging_dir, Path("docs/nerd_inventory/gitinspired-catalog.md")),
         (staging_dir, Path("docs/nerd_inventory/nerd-method-brain.md")),
-        (staging_dir, Path("docs/nerd_inventory/workspace-map.md")),
         (staging_dir, Path("docs/nerd_inventory/next-phase-backlog.md")),
     ]
     documents = []

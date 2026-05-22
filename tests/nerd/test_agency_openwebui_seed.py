@@ -154,7 +154,7 @@ def test_seed_summary_contains_actions_without_credentials():
     assert "payload" not in text
 
 
-def test_knowledge_seed_collects_existing_docs_with_stable_hashed_filenames(tmp_path):
+def test_knowledge_seed_collects_existing_docs_with_stable_filenames(tmp_path):
     seed = load_module("agency_openwebui_seed_knowledge_docs", SEED_PATH)
     stack_dir = tmp_path / "stack"
     staging_dir = tmp_path / "staging"
@@ -182,6 +182,20 @@ def test_knowledge_seed_collects_existing_docs_with_stable_hashed_filenames(tmp_
     assert docs == seed.mission_control_knowledge_documents(stack_dir, staging_dir)
 
 
+def test_knowledge_document_filename_is_stable_when_content_changes(tmp_path):
+    seed = load_module("agency_openwebui_seed_stable_filename", SEED_PATH)
+    report = tmp_path / "docs" / "nerd_inventory" / "nerd-method-brain.md"
+    report.parent.mkdir(parents=True)
+    report.write_text("# NERD-METHOD Brain\nGenerated: one\n", encoding="utf-8")
+
+    first = seed.KnowledgeDocument.from_path(report, source_root=tmp_path)
+    report.write_text("# NERD-METHOD Brain\nGenerated: two\n", encoding="utf-8")
+    second = seed.KnowledgeDocument.from_path(report, source_root=tmp_path)
+
+    assert first.filename == second.filename
+    assert first.filename == "nerd-agency--docs--nerd_inventory--nerd-method-brain.md"
+
+
 def test_knowledge_seed_collects_brain_report_when_present(tmp_path):
     seed = load_module("agency_openwebui_seed_brain_docs", SEED_PATH)
     stack_dir = tmp_path / "stack"
@@ -201,9 +215,9 @@ def test_knowledge_seed_collects_brain_report_when_present(tmp_path):
     docs = seed.mission_control_knowledge_documents(stack_dir, staging_dir)
     filenames = {doc.filename for doc in docs}
 
-    assert len(docs) == 2
+    assert len(docs) == 1
     assert any("nerd-method-brain" in filename for filename in filenames)
-    assert any("workspace-map" in filename for filename in filenames)
+    assert not any("workspace-map" in filename for filename in filenames)
 
 
 def test_knowledge_base_description_names_shared_brain_surfaces():
