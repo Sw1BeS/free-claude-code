@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 from collections.abc import Sequence
@@ -30,6 +31,9 @@ class OpenWebUIObject(TypedDict, total=False):
     tags: list[str]
     description: str
     filename: str
+    meta: dict[str, object]
+    metadata: dict[str, object]
+    data: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -80,6 +84,7 @@ class KnowledgeDocument:
     path: Path
     filename: str
     content_type: str
+    content_sha256: str
 
     @classmethod
     def from_path(cls, path: Path, *, source_root: Path) -> KnowledgeDocument:
@@ -90,6 +95,7 @@ class KnowledgeDocument:
             path=path,
             filename=f"nerd-agency--{stem}{suffix}",
             content_type=_content_type(path),
+            content_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         )
 
 
@@ -388,12 +394,50 @@ def plan_knowledge_base_upsert(
     )
 
 
-def plan_knowledge_file_adds(
+def plan_knowledge_file_changes(
     existing_files: Sequence[OpenWebUIObject],
     desired_docs: Sequence[KnowledgeDocument],
-) -> list[KnowledgeDocument]:
-    existing_filenames = {file.get("filename", "") for file in existing_files}
-    return [doc for doc in desired_docs if doc.filename not in existing_filenames]
+) -> list[SeedChange]:
+    existing_by_filename = {file.get("filename", ""): file for file in existing_files}
+    changes: list[SeedChange] = []
+    for doc in desired_docs:
+        payload: dict[str, object] = {
+            "source_path": str(doc.path),
+            "content_sha256": doc.content_sha256,
+        }
+        existing = existing_by_filename.get(doc.filename)
+        if existing is None:
+            changes.append(
+                SeedChange(
+                    kind="knowledge_file",
+                    action="create",
+                    key=doc.filename,
+                    payload=payload,
+                )
+            )
+            continue
+
+        if file_content_sha256(existing) == doc.content_sha256:
+            changes.append(
+                SeedChange(
+                    kind="knowledge_file",
+                    action="keep",
+                    key=doc.filename,
+                    payload=payload,
+                    object_id=existing.get("id"),
+                )
+            )
+        else:
+            changes.append(
+                SeedChange(
+                    kind="knowledge_file",
+                    action="update",
+                    key=doc.filename,
+                    payload=payload,
+                    object_id=existing.get("id"),
+                )
+            )
+    return changes
 
 
 def render_seed_plan(changes: Sequence[SeedChange]) -> str:
@@ -446,6 +490,28 @@ class OpenWebUISeedClient:
             return None
         return next((file for file in data if file.get("filename") == filename), None)
 
+    def find_file_by_document_digest(
+        self, doc: KnowledgeDocument
+    ) -> OpenWebUIObject | None:
+        path = f"/api/v1/files/search?filename={quote(doc.filename)}&content=false"
+        try:
+            data = self._request("GET", path)
+        except RuntimeError as exc:
+            if "404" in str(exc):
+                return None
+            raise
+        if not isinstance(data, list):
+            return None
+        return next(
+            (
+                file
+                for file in data
+                if file.get("filename") == doc.filename
+                and file_content_sha256(file) == doc.content_sha256
+            ),
+            None,
+        )
+
     def apply_change(self, change: SeedChange) -> str | None:
         if change.action == "keep":
             return change.object_id
@@ -497,7 +563,7 @@ class OpenWebUISeedClient:
     def add_document_to_knowledge(
         self, knowledge_id: str, doc: KnowledgeDocument
     ) -> str:
-        existing = self.find_file_by_filename(doc.filename)
+        existing = self.find_file_by_document_digest(doc)
         file_id = existing.get("id") if existing else None
         if not file_id:
             file_id = self.upload_document(doc)
@@ -507,6 +573,22 @@ class OpenWebUISeedClient:
             {"file_id": file_id},
         )
         return file_id
+
+    def replace_document_in_knowledge(
+        self, knowledge_id: str, doc: KnowledgeDocument, file_id: str
+    ) -> str:
+        self._request(
+            "POST",
+            f"/api/v1/knowledge/{knowledge_id}/file/remove?delete_file=true",
+            {"file_id": file_id},
+        )
+        new_file_id = self.upload_document(doc)
+        self._request(
+            "POST",
+            f"/api/v1/knowledge/{knowledge_id}/file/add",
+            {"file_id": new_file_id},
+        )
+        return new_file_id
 
     def upload_document(self, doc: KnowledgeDocument) -> str:
         data = request_multipart_json(
@@ -521,6 +603,7 @@ class OpenWebUISeedClient:
                     {
                         "nerd_agency_seed": True,
                         "source_path": str(doc.path),
+                        "content_sha256": doc.content_sha256,
                     }
                 )
             },
@@ -552,20 +635,23 @@ def apply_knowledge_documents(
 ) -> list[SeedChange]:
     documents = mission_control_knowledge_documents()
     existing_files = client.list_knowledge_files(knowledge_id) if knowledge_id else []
-    missing = plan_knowledge_file_adds(existing_files, documents)
-    changes = [
-        SeedChange(
-            kind="knowledge_file",
-            action="create",
-            key=doc.filename,
-            payload={},
-            object_id=knowledge_id,
-        )
-        for doc in missing
-    ]
+    changes = plan_knowledge_file_changes(existing_files, documents)
     if not dry_run and knowledge_id:
-        for doc in missing:
-            client.add_document_to_knowledge(knowledge_id, doc)
+        documents_by_filename = {doc.filename: doc for doc in documents}
+        for change in changes:
+            doc = documents_by_filename[change.key]
+            if change.action == "create":
+                client.add_document_to_knowledge(knowledge_id, doc)
+            elif change.action == "update":
+                if not change.object_id:
+                    raise ValueError(
+                        f"Missing Open WebUI knowledge file id for {change.key}"
+                    )
+                client.replace_document_in_knowledge(
+                    knowledge_id,
+                    doc,
+                    change.object_id,
+                )
     return changes
 
 
@@ -761,6 +847,27 @@ def _find_memory_by_marker(
         content = memory.get("content", "")
         if content.startswith(marker):
             return memory
+    return None
+
+
+def file_content_sha256(file: OpenWebUIObject) -> str | None:
+    return _find_string_value(file, "content_sha256")
+
+
+def _find_string_value(value: object, key: str) -> str | None:
+    if isinstance(value, dict):
+        candidate = value.get(key)
+        if isinstance(candidate, str) and candidate:
+            return candidate
+        for nested in value.values():
+            found = _find_string_value(nested, key)
+            if found is not None:
+                return found
+    elif isinstance(value, list):
+        for nested in value:
+            found = _find_string_value(nested, key)
+            if found is not None:
+                return found
     return None
 
 

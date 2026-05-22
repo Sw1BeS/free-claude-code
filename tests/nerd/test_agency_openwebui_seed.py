@@ -1,4 +1,5 @@
 import importlib.util
+import json
 import sys
 from importlib.machinery import SourceFileLoader
 from pathlib import Path
@@ -194,6 +195,7 @@ def test_knowledge_document_filename_is_stable_when_content_changes(tmp_path):
 
     assert first.filename == second.filename
     assert first.filename == "nerd-agency--docs--nerd_inventory--nerd-method-brain.md"
+    assert first.content_sha256 != second.content_sha256
 
 
 def test_knowledge_seed_collects_brain_report_when_present(tmp_path):
@@ -264,7 +266,7 @@ def test_knowledge_base_upsert_plan_uses_name_as_identity():
     assert update_plan.object_id == "knowledge-id"
 
 
-def test_knowledge_file_plan_adds_missing_docs_by_filename(tmp_path):
+def test_knowledge_file_plan_creates_missing_docs_by_filename(tmp_path):
     seed = load_module("agency_openwebui_seed_knowledge_file_plan", SEED_PATH)
     doc_a = tmp_path / "a.md"
     doc_b = tmp_path / "b.md"
@@ -275,12 +277,218 @@ def test_knowledge_file_plan_adds_missing_docs_by_filename(tmp_path):
         seed.KnowledgeDocument.from_path(doc_b, source_root=tmp_path),
     ]
 
-    plan = seed.plan_knowledge_file_adds(
-        [{"filename": docs[0].filename}],
+    plan = seed.plan_knowledge_file_changes(
+        [
+            {
+                "id": "file-a",
+                "filename": docs[0].filename,
+                "meta": {"data": {"content_sha256": docs[0].content_sha256}},
+            }
+        ],
         docs,
     )
 
-    assert [doc.filename for doc in plan] == [docs[1].filename]
+    actions = {(change.action, change.key): change for change in plan}
+
+    assert actions[("keep", docs[0].filename)].object_id == "file-a"
+    assert actions[("create", docs[1].filename)].object_id is None
+
+
+def test_knowledge_file_plan_keeps_attached_doc_with_matching_digest(tmp_path):
+    seed = load_module("agency_openwebui_seed_knowledge_file_plan_keep", SEED_PATH)
+    doc_path = tmp_path / "report.md"
+    doc_path.write_text("current report", encoding="utf-8")
+    doc = seed.KnowledgeDocument.from_path(doc_path, source_root=tmp_path)
+
+    plan = seed.plan_knowledge_file_changes(
+        [
+            {
+                "id": "file-id",
+                "filename": doc.filename,
+                "meta": {"data": {"content_sha256": doc.content_sha256}},
+            }
+        ],
+        [doc],
+    )
+
+    assert len(plan) == 1
+    assert plan[0].kind == "knowledge_file"
+    assert plan[0].action == "keep"
+    assert plan[0].key == doc.filename
+    assert plan[0].object_id == "file-id"
+
+
+def test_knowledge_file_plan_updates_attached_doc_with_missing_or_old_digest(tmp_path):
+    seed = load_module("agency_openwebui_seed_knowledge_file_plan_update", SEED_PATH)
+    missing_digest_path = tmp_path / "missing.md"
+    old_digest_path = tmp_path / "old.md"
+    missing_digest_path.write_text("missing digest", encoding="utf-8")
+    old_digest_path.write_text("new content", encoding="utf-8")
+    docs = [
+        seed.KnowledgeDocument.from_path(missing_digest_path, source_root=tmp_path),
+        seed.KnowledgeDocument.from_path(old_digest_path, source_root=tmp_path),
+    ]
+
+    plan = seed.plan_knowledge_file_changes(
+        [
+            {"id": "missing-id", "filename": docs[0].filename},
+            {
+                "id": "old-id",
+                "filename": docs[1].filename,
+                "meta": {"data": {"content_sha256": "old-digest"}},
+            },
+        ],
+        docs,
+    )
+
+    actions = {(change.action, change.key): change for change in plan}
+
+    assert actions[("update", docs[0].filename)].object_id == "missing-id"
+    assert actions[("update", docs[1].filename)].object_id == "old-id"
+
+
+def test_file_digest_helper_reads_nested_openwebui_metadata():
+    seed = load_module("agency_openwebui_seed_digest_helper", SEED_PATH)
+
+    assert (
+        seed.file_content_sha256(
+            {"meta": {"data": {"content_sha256": "abc123"}}}
+        )
+        == "abc123"
+    )
+    assert (
+        seed.file_content_sha256(
+            {"metadata": {"content_sha256": "def456"}}
+        )
+        == "def456"
+    )
+    assert seed.file_content_sha256({"meta": {"data": {}}}) is None
+
+
+def test_apply_knowledge_documents_updates_stale_attachment_and_keeps_current(
+    tmp_path,
+    monkeypatch,
+):
+    seed = load_module("agency_openwebui_seed_apply_docs", SEED_PATH)
+    current_path = tmp_path / "current.md"
+    stale_path = tmp_path / "stale.md"
+    current_path.write_text("current", encoding="utf-8")
+    stale_path.write_text("fresh", encoding="utf-8")
+    docs = [
+        seed.KnowledgeDocument.from_path(current_path, source_root=tmp_path),
+        seed.KnowledgeDocument.from_path(stale_path, source_root=tmp_path),
+    ]
+    monkeypatch.setattr(seed, "mission_control_knowledge_documents", lambda: docs)
+
+    class FakeClient:
+        def __init__(self):
+            self.added = []
+            self.replaced = []
+
+        def list_knowledge_files(self, knowledge_id):
+            assert knowledge_id == "knowledge-id"
+            return [
+                {
+                    "id": "current-id",
+                    "filename": docs[0].filename,
+                    "meta": {"data": {"content_sha256": docs[0].content_sha256}},
+                },
+                {
+                    "id": "stale-id",
+                    "filename": docs[1].filename,
+                    "meta": {"data": {"content_sha256": "old"}},
+                },
+            ]
+
+        def add_document_to_knowledge(self, knowledge_id, doc):
+            self.added.append((knowledge_id, doc.filename))
+
+        def replace_document_in_knowledge(self, knowledge_id, doc, file_id):
+            self.replaced.append((knowledge_id, doc.filename, file_id))
+
+    client = FakeClient()
+
+    changes = seed.apply_knowledge_documents(client, "knowledge-id")
+
+    actions = {(change.action, change.key) for change in changes}
+    assert ("keep", docs[0].filename) in actions
+    assert ("update", docs[1].filename) in actions
+    assert client.added == []
+    assert client.replaced == [("knowledge-id", docs[1].filename, "stale-id")]
+
+
+def test_add_document_to_knowledge_reuses_only_matching_global_digest(tmp_path):
+    seed = load_module("agency_openwebui_seed_add_doc", SEED_PATH)
+    doc_path = tmp_path / "report.md"
+    doc_path.write_text("current", encoding="utf-8")
+    doc = seed.KnowledgeDocument.from_path(doc_path, source_root=tmp_path)
+
+    class FakeClient(seed.OpenWebUISeedClient):
+        def __init__(self):
+            super().__init__("http://openwebui.test", "token")
+            self.uploaded = []
+            self.requests = []
+
+        def _request(self, method, path, payload=None):
+            self.requests.append((method, path, payload))
+            if method == "GET":
+                return [
+                    {
+                        "id": "old-id",
+                        "filename": doc.filename,
+                        "meta": {"data": {"content_sha256": "old"}},
+                    },
+                    {
+                        "id": "matching-id",
+                        "filename": doc.filename,
+                        "meta": {"data": {"content_sha256": doc.content_sha256}},
+                    },
+                ]
+            return {"ok": True}
+
+        def upload_document(self, doc):
+            self.uploaded.append(doc.filename)
+            return "uploaded-id"
+
+    client = FakeClient()
+
+    file_id = client.add_document_to_knowledge("knowledge-id", doc)
+
+    assert file_id == "matching-id"
+    assert client.uploaded == []
+    assert (
+        "POST",
+        "/api/v1/knowledge/knowledge-id/file/add",
+        {"file_id": "matching-id"},
+    ) in client.requests
+
+
+def test_upload_document_includes_seed_metadata_and_digest(tmp_path, monkeypatch):
+    seed = load_module("agency_openwebui_seed_upload_metadata", SEED_PATH)
+    doc_path = tmp_path / "report.md"
+    doc_path.write_text("current", encoding="utf-8")
+    doc = seed.KnowledgeDocument.from_path(doc_path, source_root=tmp_path)
+    captured = {}
+
+    def fake_request_multipart_json(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+        return {"id": "uploaded-id"}
+
+    monkeypatch.setattr(seed, "request_multipart_json", fake_request_multipart_json)
+
+    file_id = seed.OpenWebUISeedClient(
+        "http://openwebui.test",
+        "token",
+    ).upload_document(doc)
+
+    metadata = json.loads(captured["fields"]["metadata"])
+    assert file_id == "uploaded-id"
+    assert metadata == {
+        "nerd_agency_seed": True,
+        "source_path": str(doc.path),
+        "content_sha256": doc.content_sha256,
+    }
 
 
 def test_knowledge_requests_allow_large_inventory_embedding_timeout():
