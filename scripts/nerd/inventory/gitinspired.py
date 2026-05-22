@@ -156,7 +156,7 @@ GITINSPIRED_REPOS = (
         "notebooklm-py",
         "https://github.com/teng-lin/notebooklm-py",
         "google",
-        ("notebooklm-py", "notebooklm", "notebook-lm"),
+        ("notebooklm-py", "notebooklm.py", "notebooklm_api"),
         "Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation.",
     ),
     GitInspiredRepo(

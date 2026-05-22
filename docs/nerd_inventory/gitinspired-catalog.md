@@ -1,6 +1,6 @@
 # GitInspired Catalog
 
-Generated: `2026-05-22T01:07:20Z`
+Generated: `2026-05-22T01:13:55Z`
 
 | ID | Name | Kind | Status | Domain | Risk | Action |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -44,8 +44,8 @@ Generated: `2026-05-22T01:07:20Z`
 |  | source=https://github.com/666ghj/MiroFish; notes=No strong local evidence found in configured search roots. |  |  |  |  |  |
 | `gitinspired-n8n-workflows` | n8n-workflows | candidate | present | n8n | unknown | normalize |
 |  | source=https://github.com/Zie619/n8n-workflows; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/n8n-code-javascript, /root/.agents/plugins/skills/n8n-code-python, /root/.agents/plugins/skills/n8n-expression-syntax, /root/.agents/plugins/skills/n8n-mcp-tools-expert, /root/.agents/plugins/skills/n8n-node-configuration |  |  |  |  |  |
-| `gitinspired-notebooklm-py` | notebooklm-py | candidate | present | google | unknown | normalize |
-|  | source=https://github.com/teng-lin/notebooklm-py; notes=Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation.; evidence=/root/.agents/plugins/skills/notebooklm, /root/.claude/skills/skills/notebooklm |  |  |  |  |  |
+| `gitinspired-notebooklm-py` | notebooklm-py | candidate | missing | google | unknown | install_later |
+|  | source=https://github.com/teng-lin/notebooklm-py; notes=Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation. |  |  |  |  |  |
 | `gitinspired-notebooklm-skill` | notebooklm-skill | candidate | present | google | unknown | normalize |
 |  | source=https://github.com/PleasePrompto/notebooklm-skill; notes=Local evidence found; review before installing anything new.; evidence=/root/.agents/plugins/skills/notebooklm, /root/.claude/skills/skills/notebooklm |  |  |  |  |  |
 | `gitinspired-open-design` | open-design | candidate | missing | design | unknown | install_later |

@@ -34,6 +34,33 @@ def test_catalog_contains_requested_repositories():
     assert "https://github.com/teng-lin/notebooklm-py" in urls
 
 
+def test_requested_repository_metadata_is_specific():
+    gitinspired = load_gitinspired()
+    repos_by_name = {entry.name: entry for entry in gitinspired.GITINSPIRED_REPOS}
+
+    expected = {
+        "CloakBrowser": (
+            "browser-automation",
+            ("cloakbrowser", "cloak-browser", "cloak"),
+        ),
+        "ruflo": ("agents", ("ruflo", "ruvflo", "claude-flow")),
+        "codegraph": ("code-graph", ("codegraph", "code-graph")),
+        "cc-switch": ("desktop-control", ("cc-switch", "ccswitch")),
+        "notebooklm-py": (
+            "google",
+            ("notebooklm-py", "notebooklm.py", "notebooklm_api"),
+        ),
+    }
+
+    for name, (domain, aliases) in expected.items():
+        assert repos_by_name[name].domain == domain
+        assert repos_by_name[name].aliases == aliases
+
+    agency_agents_notes = repos_by_name["agency-agents"].notes.lower()
+    assert "not a runtime service" in agency_agents_notes
+    assert "agent-role pack" in agency_agents_notes
+
+
 def test_classify_candidate_from_skill_evidence(tmp_path):
     gitinspired = load_gitinspired()
     skill_root = tmp_path / ".agents" / "plugins" / "skills" / "notebooklm"
@@ -53,6 +80,34 @@ def test_classify_candidate_from_skill_evidence(tmp_path):
     assert item.status == "present"
     assert item.recommended_action == "normalize"
     assert item.domain == "google"
+
+
+def test_notebooklm_py_ignores_generic_notebooklm_skill_evidence(tmp_path):
+    gitinspired = load_gitinspired()
+    skill_root = tmp_path / ".agents" / "plugins" / "skills" / "notebooklm"
+    skill_root.mkdir(parents=True)
+    (skill_root / "SKILL.md").write_text("---\nname: notebooklm\n---\n")
+    repos_by_name = {entry.name: entry for entry in gitinspired.GITINSPIRED_REPOS}
+
+    report = gitinspired.build_gitinspired_catalog(
+        repos=[
+            repos_by_name["notebooklm-skill"],
+            repos_by_name["notebooklm-py"],
+        ],
+        search_roots=[tmp_path],
+    )
+
+    statuses = {item.name: item.status for item in report.items}
+    actions = {item.name: item.recommended_action for item in report.items}
+
+    assert statuses == {
+        "notebooklm-skill": "present",
+        "notebooklm-py": "missing",
+    }
+    assert actions == {
+        "notebooklm-skill": "normalize",
+        "notebooklm-py": "install_later",
+    }
 
 
 def test_build_catalog_marks_missing_when_no_evidence(tmp_path):
