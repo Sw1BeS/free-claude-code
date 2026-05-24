@@ -40,6 +40,7 @@ The first executable kernel is `nerd-os`:
 - `nerd-os serve` exposes an internal Docker-network API at `172.20.0.1:38181`.
 - `https://agency.umanoff-analytics.space/nerd-os/` exposes the first protected dashboard.
 - `https://agency.umanoff-analytics.space/nerd-os/blueprint` exposes the protected visual blueprint.
+- `https://agency.umanoff-analytics.space/nerd-os/office` exposes the protected virtual office concept for visible agent roles and activity lanes.
 - `/api/runs` exposes recent run history without storing stdout/stderr in the summary log.
 
 Open WebUI and n8n should call this runner instead of directly shelling out to random tools.

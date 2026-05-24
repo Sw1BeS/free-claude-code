@@ -14,6 +14,8 @@ from scripts.nerd.os.runner import (
     read_recent_runs,
     render_blueprint_html,
     render_dashboard_html,
+    render_office_html,
+    render_page_html,
 )
 
 
@@ -142,6 +144,7 @@ def test_dashboard_html_exposes_shell_without_commands(tmp_path):
     assert "/api/run" in html
     assert "/api/runs" in html
     assert 'href="blueprint"' in html
+    assert 'href="office"' in html
 
 
 def test_blueprint_html_maps_nerd_os_layers_without_commands(tmp_path):
@@ -160,3 +163,33 @@ def test_blueprint_html_maps_nerd_os_layers_without_commands(tmp_path):
     assert "stack_status" in html
     assert "cloakbrowser_start" in html
     assert "print('ok')" not in html
+
+
+def test_office_html_shows_visible_agent_agency_without_commands(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    write_actions(actions_path)
+    registry = ActionRegistry.load(actions_path)
+
+    html = render_office_html(registry)
+
+    assert "NERD OS Office" in html
+    assert "Virtual Office" in html
+    assert "Strategy Room" in html
+    assert "Automation Bay" in html
+    assert "Memory Desk" in html
+    assert "Observability Wall" in html
+    assert "Agent activity lanes" in html
+    assert "stack_status" in html
+    assert "cloakbrowser_start" in html
+    assert "print('ok')" not in html
+
+
+def test_internal_office_route_renders_office_page(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    write_actions(actions_path)
+    registry = ActionRegistry.load(actions_path)
+
+    html = render_page_html("/office", registry)
+
+    assert "NERD OS Office" in html
+    assert "Virtual Office" in html

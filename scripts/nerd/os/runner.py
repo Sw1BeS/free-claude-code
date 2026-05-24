@@ -468,6 +468,375 @@ def render_blueprint_html(registry: ActionRegistry) -> str:
 """
 
 
+def render_office_html(registry: ActionRegistry) -> str:
+    groups = registry.groups()
+    actions = {action.id: action for action in registry.actions()}
+    department_specs = [
+        (
+            "Strategy Room",
+            "core_ops",
+            "Mission planning, policy gates, operator handoffs",
+            "Director",
+        ),
+        (
+            "Automation Bay",
+            "automation_ops",
+            "Allowlisted workflows, repeatable runs, guarded execution",
+            "Automation Lead",
+        ),
+        (
+            "Memory Desk",
+            "memory_ops",
+            "Knowledge capture, prompt records, source inventory",
+            "Memory Steward",
+        ),
+        (
+            "Build Studio",
+            "build_ops",
+            "Repos, site generation, CMS and commerce delivery",
+            "Builder",
+        ),
+        (
+            "Observability Wall",
+            "observability_ops",
+            "Traces, health, logs, uptime and run history",
+            "Ops Watch",
+        ),
+        (
+            "Lab",
+            "lab",
+            "Experimental modules visible with blocked controls",
+            "Researcher",
+        ),
+    ]
+    assigned_ids = {action_id for _, group, _, _ in department_specs for action_id in groups.get(group, [])}
+    fallback_ids = [action.id for action in registry.actions() if action.id not in assigned_ids]
+    rooms = []
+    for title, group, summary, role in department_specs:
+        action_ids = groups.get(group, [])
+        if title == "Lab":
+            action_ids = action_ids + fallback_ids
+        visible_ids = action_ids[:3]
+        modules = ", ".join(visible_ids) if visible_ids else "standing by"
+        status = "active" if visible_ids else "idle"
+        risk = "low"
+        if visible_ids:
+            visible_actions = [actions[action_id] for action_id in visible_ids]
+            if any(action.risk == "high" for action in visible_actions):
+                risk = "high"
+            elif any(action.risk == "medium" for action in visible_actions):
+                risk = "medium"
+        rooms.append(
+            f"""
+            <article class="room room-{html.escape(risk)}">
+              <div class="room-head">
+                <span class="avatar" aria-hidden="true"></span>
+                <div>
+                  <p>{html.escape(role)}</p>
+                  <h2>{html.escape(title)}</h2>
+                </div>
+                <strong>{html.escape(status)}</strong>
+              </div>
+              <p class="summary">{html.escape(summary)}</p>
+              <div class="module-strip">{html.escape(modules)}</div>
+            </article>
+            """
+        )
+    lane_ids = [action.id for action in registry.actions()[:6]]
+    lanes = "\n".join(
+        f"""
+        <li>
+          <span>{html.escape(action_id)}</span>
+          <div class="track"><i style="--delay:{index}s"></i></div>
+        </li>
+        """
+        for index, action_id in enumerate(lane_ids)
+    )
+    if not lanes:
+        lanes = "<li><span>agency_idle</span><div class=\"track\"><i></i></div></li>"
+    rooms_html = "\n".join(rooms)
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NERD OS Office</title>
+  <style>
+    :root {{
+      color-scheme: dark;
+      --bg: #080a0d;
+      --panel: #10151c;
+      --panel-2: #151c25;
+      --line: #2c3745;
+      --text: #f1f5f9;
+      --muted: #9ba8b7;
+      --green: #46d37f;
+      --amber: #dfb34d;
+      --red: #ee6570;
+      --blue: #6ea8fe;
+      --cyan: #63d4dc;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    .wrap {{
+      max-width: 1420px;
+      margin: 0 auto;
+      padding: 22px;
+    }}
+    header {{
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }}
+    h1 {{
+      margin: 0;
+      font-size: 26px;
+      letter-spacing: 0;
+    }}
+    h2 {{
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }}
+    p {{
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+    }}
+    a {{
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--text);
+      padding: 0 11px;
+      text-decoration: none;
+      white-space: nowrap;
+    }}
+    .office {{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 12px;
+    }}
+    .rooms {{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }}
+    .room, .panel {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      min-width: 0;
+    }}
+    .room {{
+      min-height: 176px;
+      padding: 13px;
+      display: grid;
+      align-content: space-between;
+      gap: 12px;
+    }}
+    .room-head {{
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 10px;
+    }}
+    .room-head p {{
+      color: var(--blue);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0;
+    }}
+    .room-head strong {{
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 4px 7px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }}
+    .avatar {{
+      width: 34px;
+      height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      position: relative;
+    }}
+    .avatar::before {{
+      content: "";
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      top: 7px;
+      left: 11px;
+      animation: pulse 2.6s ease-in-out infinite;
+    }}
+    .avatar::after {{
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 8px;
+      border-radius: 7px 7px 3px 3px;
+      background: #243145;
+      bottom: 7px;
+      left: 7px;
+    }}
+    .summary {{
+      font-size: 12px;
+    }}
+    .module-strip {{
+      min-height: 34px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 8px;
+      color: var(--muted);
+      background: #0b1017;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }}
+    .room-low .room-head strong {{ color: var(--green); border-color: rgba(70, 211, 127, .45); }}
+    .room-medium .room-head strong {{ color: var(--amber); border-color: rgba(223, 179, 77, .45); }}
+    .room-high .room-head strong {{ color: var(--red); border-color: rgba(238, 101, 112, .45); }}
+    .side {{
+      display: grid;
+      gap: 12px;
+      align-content: start;
+    }}
+    .panel {{
+      padding: 14px;
+    }}
+    .panel h2 {{
+      margin-bottom: 10px;
+    }}
+    .lanes {{
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 9px;
+    }}
+    .lanes li {{
+      display: grid;
+      grid-template-columns: minmax(92px, 1fr) 1.4fr;
+      gap: 8px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 12px;
+    }}
+    .lanes span {{
+      overflow-wrap: anywhere;
+    }}
+    .track {{
+      height: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #090d13;
+      overflow: hidden;
+      position: relative;
+    }}
+    .track i {{
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      width: 28px;
+      height: 6px;
+      border-radius: 6px;
+      background: var(--cyan);
+      animation: move 4.8s linear infinite;
+      animation-delay: calc(var(--delay, 0) * -.45);
+    }}
+    .connections {{
+      display: grid;
+      gap: 8px;
+    }}
+    .connection {{
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      gap: 9px;
+      align-items: start;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-2);
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }}
+    .dot {{
+      width: 10px;
+      height: 10px;
+      margin-top: 4px;
+      border-radius: 50%;
+      background: var(--blue);
+    }}
+    @keyframes move {{
+      from {{ transform: translateX(-34px); }}
+      to {{ transform: translateX(240px); }}
+    }}
+    @keyframes pulse {{
+      0%, 100% {{ opacity: .5; }}
+      50% {{ opacity: 1; }}
+    }}
+    @media (max-width: 1080px) {{
+      .office {{ grid-template-columns: 1fr; }}
+      .rooms {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+    }}
+    @media (max-width: 680px) {{
+      .wrap {{ padding: 16px; }}
+      header {{ display: grid; }}
+      .rooms {{ grid-template-columns: 1fr; }}
+      .lanes li {{ grid-template-columns: 1fr; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>NERD OS Office</h1>
+        <p>Virtual Office for an autonomous AI agency: visible roles, working rooms, live lanes, memory, automation, and observability links.</p>
+      </div>
+      <a href="/">Command Center</a>
+    </header>
+    <section class="office" aria-label="Virtual Office">
+      <main class="rooms">
+        {rooms_html}
+      </main>
+      <aside class="side">
+        <section class="panel">
+          <h2>Agent activity lanes</h2>
+          <ul class="lanes">{lanes}</ul>
+        </section>
+        <section class="panel">
+          <h2>Agency connections</h2>
+          <div class="connections">
+            <div class="connection"><span class="dot"></span><span>Memory feeds role context, prompts, source inventory, and run reports back into each room.</span></div>
+            <div class="connection"><span class="dot"></span><span>Automation gates move approved work from planning into repeatable n8n and runner actions.</span></div>
+            <div class="connection"><span class="dot"></span><span>Observability connects traces, health, logs, and recent runs so agents stay inspectable.</span></div>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </div>
+</body>
+</html>
+"""
+
+
 def render_dashboard_html(registry: ActionRegistry) -> str:
     surfaces = registry.surfaces()
     actions = {action.id: action for action in registry.actions()}
@@ -734,6 +1103,7 @@ def render_dashboard_html(registry: ActionRegistry) -> str:
           <span class="pill" id="moduleCount">{len(registry.actions())} modules</span>
           <span class="pill">policy gated</span>
           <a class="pill link-pill" href="blueprint">blueprint</a>
+          <a class="pill link-pill" href="office">office</a>
         </div>
       </div>
       <section class="grid" id="moduleGrid">{cards_html}</section>
@@ -812,6 +1182,16 @@ def render_dashboard_html(registry: ActionRegistry) -> str:
 """
 
 
+def render_page_html(path: str, registry: ActionRegistry) -> str | None:
+    if path in {"/", "/index.html"}:
+        return render_dashboard_html(registry)
+    if path in {"/blueprint", "/blueprint/"}:
+        return render_blueprint_html(registry)
+    if path in {"/office", "/office/"}:
+        return render_office_html(registry)
+    return None
+
+
 def _surface_label(surface: str) -> str:
     return " ".join(part.capitalize() for part in surface.split("_"))
 
@@ -827,11 +1207,9 @@ def serve(
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:
-            if self.path in {"/", "/index.html"}:
-                self._html(render_dashboard_html(registry))
-                return
-            if self.path in {"/blueprint", "/blueprint/"}:
-                self._html(render_blueprint_html(registry))
+            page = render_page_html(self.path, registry)
+            if page is not None:
+                self._html(page)
                 return
             if self.path == "/health":
                 self._json({"status": "ok", "actions": len(registry.actions())})
