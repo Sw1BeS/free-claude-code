@@ -1,6 +1,6 @@
 # ClaudeCore Codemap
 
-Generated: `2026-05-24T06:45:35Z`
+Generated: `2026-05-24T07:08:36Z`
 
 | ID | Name | Kind | Status | Domain | Risk | Action |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -21,4 +21,4 @@ Generated: `2026-05-24T06:45:35Z`
 | `codemap-scripts-nerd` | scripts/nerd | dir | present | nerd | low | keep |
 |  | path=/root/nerd-claude-free-staging/scripts/nerd; notes=NERD wrappers, migration utilities, inventory tooling.; evidence=/root/nerd-claude-free-staging/scripts/nerd |  |  |  |  |  |
 | `codemap-upstream-status` | ClaudeCore upstream status | repo | staged | upstream | medium | review_later |
-|  | path=/root/nerd-claude-free-staging; notes=staged_ahead=33; staged_behind=5; legacy_ahead=2; legacy_behind=94; evidence=/root/nerd-claude-free-staging, /root/free-claude-code |  |  |  |  |  |
+|  | path=/root/nerd-claude-free-staging; notes=staged_ahead=35; staged_behind=5; legacy_ahead=2; legacy_behind=94; evidence=/root/nerd-claude-free-staging, /root/free-claude-code |  |  |  |  |  |
