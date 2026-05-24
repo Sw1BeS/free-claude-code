@@ -256,6 +256,7 @@ def mission_control_knowledge_documents(
         (stack_dir, Path("nerd-os.ui.yaml")),
         (stack_dir, Path("nerd-os.openapi.json")),
         (staging_dir, Path("docs/nerd_agency_mission_control.md")),
+        (staging_dir, Path("docs/nerd_method_master_prompt.md")),
         (staging_dir, Path("docs/nerd_method_product_essence.md")),
         (staging_dir, Path("docs/nerd_os_ui_ux.md")),
         (staging_dir, Path("docs/nerd_inventory/mission-control-stack.md")),
