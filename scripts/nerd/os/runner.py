@@ -236,6 +236,238 @@ def read_recent_runs(
     return recent
 
 
+def render_blueprint_html(registry: ActionRegistry) -> str:
+    surfaces = registry.surfaces()
+    groups = registry.groups()
+    surface_cards = "\n".join(
+        f"""
+        <article class="node">
+          <p>{html.escape(_surface_label(surface))}</p>
+          <strong>{len(action_ids)} modules</strong>
+          <span>{html.escape(", ".join(action_ids[:3]))}</span>
+        </article>
+        """
+        for surface, action_ids in surfaces.items()
+    )
+    group_cards = "\n".join(
+        f"""
+        <article class="node compact">
+          <p>{html.escape(group)}</p>
+          <strong>{len(action_ids)}</strong>
+          <span>{html.escape(", ".join(action_ids))}</span>
+        </article>
+        """
+        for group, action_ids in groups.items()
+    )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NERD OS Blueprint</title>
+  <style>
+    :root {{
+      color-scheme: dark;
+      --bg: #08090b;
+      --panel: #11151b;
+      --panel-2: #171d24;
+      --line: #303844;
+      --text: #f3f6f9;
+      --muted: #9aa4b2;
+      --green: #42d17f;
+      --amber: #ddb04a;
+      --blue: #6ea8fe;
+      --pink: #ec7aa8;
+      --cyan: #63d4dc;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    .wrap {{
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
+    }}
+    header {{
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 18px;
+      margin-bottom: 18px;
+    }}
+    h1 {{
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: 0;
+    }}
+    p {{
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+    }}
+    a {{
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 12px;
+      text-decoration: none;
+      white-space: nowrap;
+    }}
+    .map {{
+      display: grid;
+      grid-template-columns: 1.1fr 1.3fr 1.1fr;
+      gap: 14px;
+      align-items: stretch;
+    }}
+    .layer {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 16px;
+      min-height: 180px;
+    }}
+    .layer h2 {{
+      margin: 0 0 12px;
+      font-size: 15px;
+      letter-spacing: 0;
+    }}
+    .stack {{
+      display: grid;
+      gap: 10px;
+    }}
+    .node {{
+      min-height: 92px;
+      display: grid;
+      gap: 6px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-2);
+    }}
+    .node p {{
+      color: var(--blue);
+      font-size: 12px;
+    }}
+    .node strong {{
+      font-size: 15px;
+    }}
+    .node span {{
+      color: var(--muted);
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }}
+    .compact {{
+      min-height: 72px;
+    }}
+    .brain {{
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      border-color: rgba(66, 209, 127, .5);
+    }}
+    .brain .node p {{ color: var(--green); }}
+    .entry .node p {{ color: var(--cyan); }}
+    .tools .node p {{ color: var(--blue); }}
+    .automation .node p {{ color: var(--amber); }}
+    .observability .node p {{ color: var(--pink); }}
+    .wide {{
+      grid-column: 1 / -1;
+    }}
+    .flow {{
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }}
+    .flow span {{
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 10px;
+      color: var(--muted);
+      background: #0d1117;
+      text-align: center;
+      font-size: 12px;
+    }}
+    @media (max-width: 980px) {{
+      .map, .brain, .flow {{ grid-template-columns: 1fr; }}
+      header {{ display: grid; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>NERD OS Blueprint</h1>
+        <p>One operational shell for ClaudeCore, Open WebUI, automation, shared memory, GitInspired modules, CMS commerce, data work, and observability.</p>
+      </div>
+      <a href="/">Command Center</a>
+    </header>
+    <section class="map">
+      <section class="layer entry">
+        <h2>Entry Points</h2>
+        <div class="stack">
+          <article class="node"><p>Public UI</p><strong>Open WebUI + NERD OS</strong><span>agency.umanoff-analytics.space</span></article>
+          <article class="node"><p>CLI</p><strong>free-claude / nerd-os</strong><span>server and future Mac node</span></article>
+        </div>
+      </section>
+      <section class="layer brain">
+        <div>
+          <h2>Shared Brain</h2>
+          <p>Single durable memory layer used by every entry point.</p>
+        </div>
+        <article class="node"><p>Inventory</p><strong>NERD-METHOD reports</strong><span>services, repos, skills, source cache</span></article>
+        <article class="node"><p>Knowledge</p><strong>Open WebUI knowledge</strong><span>seeded docs and manifests</span></article>
+        <article class="node"><p>Vault</p><strong>Obsidian / NotebookLM</strong><span>notes, reports, prompt library</span></article>
+        <article class="node"><p>Code Memory</p><strong>GitNexus / CodeGraph</strong><span>symbol graph, impact, traces</span></article>
+      </section>
+      <section class="layer observability">
+        <h2>Observability</h2>
+        <div class="stack">
+          <article class="node"><p>Traces</p><strong>Langfuse</strong><span>LLM and agent execution traces</span></article>
+          <article class="node"><p>Ops</p><strong>Grafana / Loki / Uptime Kuma</strong><span>logs, metrics, uptime</span></article>
+        </div>
+      </section>
+      <section class="layer tools wide">
+        <h2>Tool Mesh</h2>
+        <div class="flow">
+          <span>LiteLLM / Ollama / providers</span>
+          <span>NERD-CLAUDE-free</span>
+          <span>GitInspired source cache</span>
+          <span>CMS commerce modules</span>
+          <span>Data and browser modules</span>
+        </div>
+      </section>
+      <section class="layer automation wide">
+        <h2>Automation Fabric</h2>
+        <div class="flow">
+          <span>n8n workflows</span>
+          <span>MCP / OpenAPI gates</span>
+          <span>risk policy</span>
+          <span>run history</span>
+          <span>kill switches</span>
+        </div>
+      </section>
+      <section class="layer wide">
+        <h2>Current Control Surfaces</h2>
+        <div class="flow">{surface_cards}</div>
+      </section>
+      <section class="layer wide">
+        <h2>Action Groups</h2>
+        <div class="flow">{group_cards}</div>
+      </section>
+    </section>
+  </div>
+</body>
+</html>
+"""
+
+
 def render_dashboard_html(registry: ActionRegistry) -> str:
     surfaces = registry.surfaces()
     actions = {action.id: action for action in registry.actions()}
@@ -370,6 +602,9 @@ def render_dashboard_html(registry: ActionRegistry) -> str:
       color: var(--muted);
       font-size: 12px;
     }}
+    .link-pill {{
+      text-decoration: none;
+    }}
     .risk-low, .mode-allowed {{ color: var(--green); border-color: rgba(65, 211, 146, .45); }}
     .risk-medium {{ color: var(--amber); border-color: rgba(227, 179, 65, .45); }}
     .risk-high, .mode-disabled {{ color: var(--red); border-color: rgba(239, 98, 108, .45); }}
@@ -498,6 +733,7 @@ def render_dashboard_html(registry: ActionRegistry) -> str:
         <div class="status-row">
           <span class="pill" id="moduleCount">{len(registry.actions())} modules</span>
           <span class="pill">policy gated</span>
+          <a class="pill link-pill" href="blueprint">blueprint</a>
         </div>
       </div>
       <section class="grid" id="moduleGrid">{cards_html}</section>
@@ -593,6 +829,9 @@ def serve(
         def do_GET(self) -> None:
             if self.path in {"/", "/index.html"}:
                 self._html(render_dashboard_html(registry))
+                return
+            if self.path in {"/blueprint", "/blueprint/"}:
+                self._html(render_blueprint_html(registry))
                 return
             if self.path == "/health":
                 self._json({"status": "ok", "actions": len(registry.actions())})

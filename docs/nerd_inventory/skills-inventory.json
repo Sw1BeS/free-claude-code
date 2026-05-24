@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-22T12:06:12Z",
+  "generated_at": "2026-05-24T06:45:16Z",
   "items": [
     {
       "domain": "general",
@@ -29838,7 +29838,7 @@
       "id": "skill-plugin-creator",
       "kind": "skill",
       "name": "plugin-creator",
-      "notes": "Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, and baseline placeholders you can edit before publishing or testing. Use when Codex needs to create a new local plugin, add optional plugin structure, or generate or update repo-root `.agents/plugins/marketplace.json` entries for plugin ordering and availability metadata.",
+      "notes": "Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, valid manifest defaults, and personal-marketplace entries by default. Use when Codex needs to create a new personal plugin, add optional plugin structure, or generate or update marketplace entries for plugin ordering and availability metadata.",
       "path": "/root/.codex/skills/.system/plugin-creator",
       "recommended_action": "normalize",
       "risk": "unknown",

@@ -29,6 +29,7 @@ The interface should feel like a dense mission OS:
 - Left rail: Command Center, Agents, Automations, Memory, Build, Observability, Lab, Settings.
 - Main area: selected surface with grouped module cards and run history.
 - Right drawer: selected module details, docs, last output, policy, and related knowledge.
+- Blueprint view: visual OS map that shows entry points, shared brain, tool mesh, automation fabric, and observability in one screen.
 
 ## Current Implementation Anchor
 
@@ -38,6 +39,7 @@ The first executable kernel is `nerd-os`:
 - `nerd-os run <action_id>` runs only allowlisted actions.
 - `nerd-os serve` exposes an internal Docker-network API at `172.20.0.1:38181`.
 - `https://agency.umanoff-analytics.space/nerd-os/` exposes the first protected dashboard.
+- `https://agency.umanoff-analytics.space/nerd-os/blueprint` exposes the protected visual blueprint.
 - `/api/runs` exposes recent run history without storing stdout/stderr in the summary log.
 
 Open WebUI and n8n should call this runner instead of directly shelling out to random tools.

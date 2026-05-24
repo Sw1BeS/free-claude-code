@@ -12,6 +12,7 @@ from scripts.nerd.os.runner import (
     action_summary,
     main,
     read_recent_runs,
+    render_blueprint_html,
     render_dashboard_html,
 )
 
@@ -140,3 +141,22 @@ def test_dashboard_html_exposes_shell_without_commands(tmp_path):
     assert "/api/actions" in html
     assert "/api/run" in html
     assert "/api/runs" in html
+    assert 'href="blueprint"' in html
+
+
+def test_blueprint_html_maps_nerd_os_layers_without_commands(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    write_actions(actions_path)
+    registry = ActionRegistry.load(actions_path)
+
+    html = render_blueprint_html(registry)
+
+    assert "NERD OS Blueprint" in html
+    assert "Entry Points" in html
+    assert "Shared Brain" in html
+    assert "Tool Mesh" in html
+    assert "Automation Fabric" in html
+    assert "Observability" in html
+    assert "stack_status" in html
+    assert "cloakbrowser_start" in html
+    assert "print('ok')" not in html

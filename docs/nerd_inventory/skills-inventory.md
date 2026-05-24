@@ -1,6 +1,6 @@
 # Skills Inventory
 
-Generated: `2026-05-22T12:06:12Z`
+Generated: `2026-05-24T06:45:16Z`
 
 | ID | Name | Kind | Status | Domain | Risk | Action |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -4267,7 +4267,7 @@ Generated: `2026-05-22T12:06:12Z`
 | `skill-plotly-root-claude-skills-skills-plotly` | plotly | skill | present | general | unknown | normalize |
 |  | path=/root/.claude/skills/skills/plotly; notes=Interactive visualization library. Use when you need hover info, zoom, pan, or web-embeddable charts. Best for dashboards, exploratory analysis, and presentations. For static publication figures use matplotlib or scientific-visualization.; evidence=/root/.claude/skills/skills/plotly/SKILL.md |  |  |  |  |  |
 | `skill-plugin-creator` | plugin-creator | skill | present | data | unknown | normalize |
-|  | path=/root/.codex/skills/.system/plugin-creator; notes=Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, and baseline placeholders you can edit before publishing or testing. Use when Codex needs to create a new local plugin, add optional plugin structure, or generate or update repo-root `.agents/plugins/marketplace.json` entries for plugin ordering and availability metadata.; evidence=/root/.codex/skills/.system/plugin-creator/SKILL.md |  |  |  |  |  |
+|  | path=/root/.codex/skills/.system/plugin-creator; notes=Create and scaffold plugin directories for Codex with a required `.codex-plugin/plugin.json`, optional plugin folders/files, valid manifest defaults, and personal-marketplace entries by default. Use when Codex needs to create a new personal plugin, add optional plugin structure, or generate or update marketplace entries for plugin ordering and availability metadata.; evidence=/root/.codex/skills/.system/plugin-creator/SKILL.md |  |  |  |  |  |
 | `skill-podcast-generation` | podcast-generation | skill | present | general | unknown | normalize |
 |  | path=/root/.agents/plugins/skills/podcast-generation; notes=Generate real audio narratives from text content using Azure OpenAI's Realtime API.; evidence=/root/.agents/plugins/skills/podcast-generation/SKILL.md |  |  |  |  |  |
 | `skill-podcast-generation-root-claude-skills-skills-podcast-generation` | podcast-generation | skill | present | general | unknown | normalize |
