@@ -1,0 +1,127 @@
+{
+  "generated_at": "2026-05-24T17:25:52Z",
+  "items": [
+    {
+      "classification": "installed",
+      "domain": "autonomous-core",
+      "evidence": [
+        "/root/nerd-method/AGENTS.md",
+        "/root/nerd-method/memory"
+      ],
+      "id": "autonomous-core-canonical-root",
+      "kind": "dir",
+      "name": "NERD-METHOD Canonical Root",
+      "notes": "Product root for Autonomous Core state; staging workspaces must not replace it.",
+      "path": "/root/nerd-method",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "classification": "high-risk-disabled",
+      "domain": "lab",
+      "evidence": [
+        "/root/nerd-method/departments/lab",
+        "/root/nerd-method/system/risk-policy.yaml"
+      ],
+      "id": "autonomous-core-lab",
+      "kind": "config",
+      "name": "High-Risk Lab Gate",
+      "notes": "Lab requests are recorded and routed to approval; real-world harmful actions remain blocked.",
+      "path": "/root/nerd-method/departments/lab",
+      "recommended_action": "review_later",
+      "risk": "high",
+      "status": "staged"
+    },
+    {
+      "classification": "installed",
+      "domain": "memory",
+      "evidence": [
+        "/root/nerd-method/memory/artifacts",
+        "/root/nerd-method/memory/inbox",
+        "/root/nerd-method/memory/runs",
+        "/root/nerd-method/memory/tasks"
+      ],
+      "id": "autonomous-core-memory",
+      "kind": "dir",
+      "name": "Autonomous Core Memory",
+      "notes": "JSON-first memory queues for inbox, tasks, runs, traces, reports, and artifacts.",
+      "path": "/root/nerd-method/memory",
+      "recommended_action": "index",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "classification": "runtime-candidate",
+      "domain": "automations",
+      "evidence": [
+        "/root/nerd-agency-stack/n8n/v1-workflows",
+        "/root/nerd-method/registry/workflows.json"
+      ],
+      "id": "autonomous-core-n8n-visibility",
+      "kind": "service",
+      "name": "n8n Workflow Visibility",
+      "notes": "Workflows are visible records with gates; Autonomous Core does not run hidden workflow state.",
+      "path": "/root/nerd-agency-stack/n8n/v1-workflows",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "source_url": "https://automations.umanoff-analytics.space",
+      "status": "present"
+    },
+    {
+      "classification": "installed",
+      "domain": "autonomous-core",
+      "evidence": [
+        "/root/nerd-method/registry/departments.json",
+        "/root/nerd-method/registry/existing-work.json",
+        "/root/nerd-method/registry/models.json",
+        "/root/nerd-method/registry/workflows.json"
+      ],
+      "id": "autonomous-core-registry",
+      "kind": "config",
+      "name": "Autonomous Core Registry",
+      "notes": "Canonical registry for existing work, departments, tools, workflows, and model profiles.",
+      "path": "/root/nerd-method/registry",
+      "recommended_action": "index",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "classification": "runtime-candidate",
+      "domain": "runtimes",
+      "evidence": [
+        "/root/hermes",
+        "/root/nerd-method/registry/runtime-integrations.json",
+        "/root/nerd-method/system/model-routing.yaml",
+        "/root/nerd-method/tools/git-inspired/awesome-openclaw-skills"
+      ],
+      "id": "autonomous-core-runtime-integrations",
+      "kind": "config",
+      "name": "Runtime Integrations Registry",
+      "notes": "Read-only registry for Hermes, OpenClaw sources, local LLMs, LiteLLM, Ollama, and model routers.",
+      "path": "/root/nerd-method/registry/runtime-integrations.json",
+      "recommended_action": "index",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "classification": "runtime-candidate",
+      "domain": "autonomous-core",
+      "evidence": [
+        "/root/nerd-method/system/autonomy-policy.yaml",
+        "/root/nerd-method/system/memory-contract.yaml",
+        "/root/nerd-method/system/model-routing.yaml",
+        "/root/nerd-method/system/risk-policy.yaml"
+      ],
+      "id": "autonomous-core-system-policy",
+      "kind": "config",
+      "name": "Autonomous Core System Policy",
+      "notes": "Policy files define model routing, autonomy levels, risk gates, and memory writeback.",
+      "path": "/root/nerd-method/system",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "present"
+    }
+  ],
+  "warnings": []
+}

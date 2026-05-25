@@ -37,3 +37,27 @@ def test_mission_control_report_contains_public_subdomains_and_memory_layers(tmp
     memory = next(item for item in report.items if item.id == "memory-layer-system")
     assert memory.domain == "unified-memory"
     assert "Open WebUI knowledge" in (memory.notes or "")
+
+
+def test_mission_control_report_presents_domain_routes_not_local_ips(tmp_path):
+    mission = load_module("inventory_mission_control_domain_routes", MISSION_PATH)
+
+    report = mission.build_mission_control_report(tmp_path)
+    text = "\n".join(
+        " ".join(
+            [
+                item.path or "",
+                item.source_url or "",
+                item.notes or "",
+                *item.evidence,
+            ]
+        )
+        for item in report.items
+    )
+
+    assert "https://agency.umanoff-analytics.space" in text
+    assert "https://automations.umanoff-analytics.space" in text
+    assert "https://obs.umanoff-analytics.space" in text
+    assert "http://127.0.0.1" not in text
+    assert "http://172.20.0.1" not in text
+    assert "localhost" not in text

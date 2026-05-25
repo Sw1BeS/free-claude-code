@@ -10,7 +10,7 @@ The implementation is intentionally separate from both existing ClaudeCore check
 
 ## Architecture
 
-Open WebUI is the main UI and is bound to `127.0.0.1:38080`. nginx is the only intended public edge for `agency.umanoff-analytics.space`.
+Open WebUI is one workspace inside the public Mission Control domain. nginx is the only intended public edge for `agency.umanoff-analytics.space`; user-facing links should use the public domains, not backend loopback addresses.
 
 The Open WebUI container joins the existing `hermes-evolution-internal` Docker network so it can call:
 
@@ -19,7 +19,7 @@ The Open WebUI container joins the existing `hermes-evolution-internal` Docker n
 - n8n as `http://n8n:5678`
 - Langfuse as `http://langfuse-web:3000`
 
-The existing `[NERD-CLAUDE]-free` Admin UI remains a local-only backend/admin surface at `http://127.0.0.1:18082/admin`.
+The existing `[NERD-CLAUDE]-free` Admin UI remains a private backend/admin surface and should be surfaced through NERD OS status panels rather than direct public links.
 
 ## V1 Product Scope
 
@@ -53,6 +53,9 @@ Cloudflare DNS is managed from `/root/nerd-agency-stack/scripts/cloudflare-dns-s
 Live public hostnames:
 
 - `https://agency.umanoff-analytics.space`
+- `https://agency.umanoff-analytics.space/nerd-os/`
+- `https://agency.umanoff-analytics.space/nerd-os/blueprint`
+- `https://agency.umanoff-analytics.space/nerd-os/office`
 - `https://agents.umanoff-analytics.space`
 - `https://automations.umanoff-analytics.space`
 - `https://memory.umanoff-analytics.space`

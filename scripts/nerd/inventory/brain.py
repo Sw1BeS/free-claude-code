@@ -20,6 +20,11 @@ else:
     from .workspace import generated_at
 
 
+PUBLIC_AGENCY_URL = "https://agency.umanoff-analytics.space"
+PUBLIC_AUTOMATIONS_URL = "https://automations.umanoff-analytics.space"
+PUBLIC_OBSERVABILITY_URL = "https://obs.umanoff-analytics.space"
+
+
 def _local_status(path: Path) -> str:
     return "present" if path.exists() else "investigate"
 
@@ -142,8 +147,8 @@ def build_brain_report(
                 domain="brain-codegraph",
                 risk="low",
                 action="keep",
-                source_url="http://127.0.0.1:4173",
-                notes="Internal loopback code graph service",
+                source_url=f"{PUBLIC_AGENCY_URL}/nerd-os/",
+                notes="Code intelligence surface is linked through NERD OS; raw backend remains private",
             ),
             _item(
                 item_id="brain-n8n",
@@ -153,8 +158,8 @@ def build_brain_report(
                 domain="brain-automation",
                 risk="medium",
                 action="keep",
-                source_url="http://127.0.0.1:5678",
-                notes="Internal loopback automation service",
+                source_url=PUBLIC_AUTOMATIONS_URL,
+                notes="Automation workspace route; raw n8n backend remains private",
             ),
             _item(
                 item_id="brain-langfuse",
@@ -164,8 +169,8 @@ def build_brain_report(
                 domain="brain-observability",
                 risk="low",
                 action="keep",
-                source_url="http://127.0.0.1:3300",
-                notes="Internal loopback observability service",
+                source_url=PUBLIC_OBSERVABILITY_URL,
+                notes="Observability workspace route; raw trace backend remains private",
             ),
         ]
     )

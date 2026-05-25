@@ -1,7 +1,8 @@
 {
-  "generated_at": "2026-05-24T07:08:17Z",
+  "generated_at": "2026-05-24T17:25:33Z",
   "items": [
     {
+      "classification": "runtime-candidate",
       "domain": "routing",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/9router",
@@ -18,11 +19,12 @@
       "name": "9router",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/decolua/9router",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "agents",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/agency-agents",
@@ -31,13 +33,14 @@
       "id": "gitinspired-agency-agents",
       "kind": "candidate",
       "name": "agency-agents",
-      "notes": "Agent-role pack candidate for reusable role definitions; not a runtime service.",
+      "notes": "Agent-role pack candidate for reusable role definitions; not a runtime service. Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/msitarzewski/agency-agents",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "skills",
       "evidence": [
         "/root/.agents/plugins/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md",
@@ -50,11 +53,12 @@
       "name": "awesome-claude-skills",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/travisvn/awesome-claude-skills",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "github",
       "evidence": [
         "/root/.agents/plugins/skills/copilot-sdk",
@@ -71,11 +75,12 @@
       "name": "awesome-copilot",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/github/awesome-copilot",
       "status": "present"
     },
     {
+      "classification": "research-only",
       "domain": "design",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/awesome-design-systems",
@@ -90,13 +95,14 @@
       "id": "gitinspired-awesome-design-systems",
       "kind": "candidate",
       "name": "awesome-design-systems",
-      "notes": "Local evidence found; review before installing anything new.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "notes": "Research/simulation/read-only only until an approval policy exists.",
+      "recommended_action": "review_later",
+      "risk": "medium",
       "source_url": "https://github.com/alexpate/awesome-design-systems",
       "status": "present"
     },
     {
+      "classification": "research-only",
       "domain": "security",
       "evidence": [
         "/root/.agents/plugins/skills/ethical-hacking-methodology",
@@ -109,13 +115,14 @@
       "id": "gitinspired-awesome-hacking",
       "kind": "candidate",
       "name": "Awesome-Hacking",
-      "notes": "Local evidence found; review before installing anything new.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "notes": "Research/simulation/read-only only until an approval policy exists.",
+      "recommended_action": "review_later",
+      "risk": "medium",
       "source_url": "https://github.com/Hack-with-Github/Awesome-Hacking",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "skills",
       "evidence": [
         "/root/.agents/plugins/skills/openclaw-github-repo-commander",
@@ -132,11 +139,12 @@
       "name": "awesome-openclaw-skills",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/VoltAgent/awesome-openclaw-skills",
       "status": "present"
     },
     {
+      "classification": "deferred",
       "domain": "desktop-control",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/cc-switch",
@@ -148,13 +156,14 @@
       "id": "gitinspired-cc-switch",
       "kind": "candidate",
       "name": "cc-switch",
-      "notes": "Desktop all-in-one assistant candidate for Claude Code, Codex, OpenCode, OpenClaw, Gemini CLI, and Hermes Agent workflows.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "notes": "Desktop all-in-one assistant candidate for Claude Code, Codex, OpenCode, OpenClaw, Gemini CLI, and Hermes Agent workflows. Local evidence found; review before installing anything new.",
+      "recommended_action": "review_later",
+      "risk": "medium",
       "source_url": "https://github.com/farion1231/cc-switch",
       "status": "present"
     },
     {
+      "classification": "high-risk-disabled",
       "domain": "browser-automation",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/9router/open-sse/utils/claudeCloaking.js",
@@ -167,13 +176,14 @@
       "id": "gitinspired-cloakbrowser",
       "kind": "candidate",
       "name": "CloakBrowser",
-      "notes": "Playwright/Puppeteer-compatible stealth browser; high-risk automation candidate that should remain disabled by default until policy reviewed.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "notes": "Playwright/Puppeteer-compatible stealth browser; high-risk automation candidate that should remain disabled by default until policy reviewed. Disabled by NERD OS policy; do not run or install into runtime without an explicit high-risk automation policy.",
+      "recommended_action": "skip",
+      "risk": "high",
       "source_url": "https://github.com/CloakHQ/CloakBrowser",
       "status": "present"
     },
     {
+      "classification": "installed",
       "domain": "code-graph",
       "evidence": [
         "/root/nerd-method/bin/codegraph",
@@ -185,13 +195,14 @@
       "id": "gitinspired-codegraph",
       "kind": "candidate",
       "name": "codegraph",
-      "notes": "Local code knowledge graph candidate with CLI/MCP tools for search, context, callers, and impact analysis.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "notes": "Local code knowledge graph candidate with CLI/MCP tools for search, context, callers, and impact analysis. Local evidence found; review before installing anything new.",
+      "recommended_action": "keep",
+      "risk": "low",
       "source_url": "https://github.com/colbymchenry/codegraph",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "skills",
       "evidence": [
         "/root/.agents/plugins/skills/docs/users/antigravity-awesome-skills-vs-awesome-claude-skills.md",
@@ -208,11 +219,12 @@
       "name": "composio-awesome-claude-skills",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/ComposioHQ/awesome-claude-skills",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "scraping",
       "evidence": [
         "/root/.agents/plugins/skills/firecrawl-scraper",
@@ -229,11 +241,12 @@
       "name": "crawl4ai",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/unclecode/crawl4ai",
       "status": "present"
     },
     {
+      "classification": "deferred",
       "domain": "agents",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/dify",
@@ -249,12 +262,13 @@
       "kind": "candidate",
       "name": "dify",
       "notes": "Local evidence found; review before installing anything new.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "recommended_action": "review_later",
+      "risk": "medium",
       "source_url": "https://github.com/langgenius/dify",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "claude",
       "evidence": [
         "/root/.agents/plugins/skills/everything-claude-code",
@@ -271,11 +285,12 @@
       "name": "ECC",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/affaan-m/ECC",
       "status": "present"
     },
     {
+      "classification": "installed",
       "domain": "gitnexus",
       "evidence": [
         "/root/.agents/skills/gitnexus-cli",
@@ -291,12 +306,13 @@
       "kind": "candidate",
       "name": "GitNexus",
       "notes": "Local evidence found; review before installing anything new.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "recommended_action": "keep",
+      "risk": "low",
       "source_url": "https://github.com/abhigyanpatwari/GitNexus",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "knowledge",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/graphify",
@@ -311,11 +327,12 @@
       "name": "graphify",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/safishamsi/graphify",
       "status": "present"
     },
     {
+      "classification": "high-risk-disabled",
       "domain": "security",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/hackingtool",
@@ -324,13 +341,14 @@
       "id": "gitinspired-hackingtool",
       "kind": "candidate",
       "name": "hackingtool",
-      "notes": "Local evidence found; review before installing anything new.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "notes": "Disabled by NERD OS policy; do not run or install into runtime without an explicit high-risk automation policy.",
+      "recommended_action": "skip",
+      "risk": "high",
       "source_url": "https://github.com/Z4nzu/hackingtool",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "skills",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/mattpocock-skills"
@@ -340,11 +358,12 @@
       "name": "mattpocock-skills",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/mattpocock/skills",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "agents",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/mirofish",
@@ -358,11 +377,12 @@
       "name": "MiroFish",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/666ghj/MiroFish",
       "status": "present"
     },
     {
+      "classification": "source-cache",
       "domain": "n8n",
       "evidence": [
         "/root/.agents/plugins/skills/n8n-code-javascript",
@@ -379,11 +399,12 @@
       "name": "n8n-workflows",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/Zie619/n8n-workflows",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "google",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/notebooklm-py",
@@ -395,13 +416,14 @@
       "id": "gitinspired-notebooklm-py",
       "kind": "candidate",
       "name": "notebooklm-py",
-      "notes": "Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation.",
+      "notes": "Unofficial NotebookLM Python API, CLI, and agent skill candidate for bulk import/export and research automation. Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/teng-lin/notebooklm-py",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "google",
       "evidence": [
         "/root/.agents/plugins/skills/notebooklm",
@@ -418,11 +440,12 @@
       "name": "notebooklm-skill",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/PleasePrompto/notebooklm-skill",
       "status": "present"
     },
     {
+      "classification": "source-cache",
       "domain": "design",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/open-design",
@@ -439,11 +462,12 @@
       "name": "open-design",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/nexu-io/open-design",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "agents",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/openjarvis",
@@ -460,11 +484,12 @@
       "name": "OpenJarvis",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/open-jarvis/OpenJarvis",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "agents",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/openmythos"
@@ -474,11 +499,12 @@
       "name": "OpenMythos",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/kyegomez/OpenMythos",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "ui",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/openui",
@@ -495,11 +521,12 @@
       "name": "openui",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/thesysdev/openui",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "agents",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/ruflo",
@@ -514,13 +541,14 @@
       "id": "gitinspired-ruflo",
       "kind": "candidate",
       "name": "ruflo",
-      "notes": "Multi-agent orchestration candidate for Claude Code with MCP, server, plugin, memory, and swarm capabilities.",
+      "notes": "Multi-agent orchestration candidate for Claude Code with MCP, server, plugin, memory, and swarm capabilities. Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/ruvnet/ruflo",
       "status": "present"
     },
     {
+      "classification": "source-cache",
       "domain": "github",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/spec-kit",
@@ -532,11 +560,12 @@
       "name": "spec-kit",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/github/spec-kit",
       "status": "present"
     },
     {
+      "classification": "runtime-candidate",
       "domain": "agents",
       "evidence": [
         "/root/nerd-method/tools/git-inspired/successor-agent"
@@ -546,11 +575,12 @@
       "name": "successor-agent",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "medium",
       "source_url": "https://github.com/lyc-aon/successor-agent",
       "status": "present"
     },
     {
+      "classification": "research-only",
       "domain": "finance",
       "evidence": [
         "/root/free-claude-code/TradingAgents",
@@ -562,13 +592,14 @@
       "id": "gitinspired-tradingagents",
       "kind": "candidate",
       "name": "TradingAgents",
-      "notes": "Local evidence found; review before installing anything new.",
-      "recommended_action": "normalize",
-      "risk": "unknown",
+      "notes": "Research/simulation/read-only only until an approval policy exists.",
+      "recommended_action": "review_later",
+      "risk": "medium",
       "source_url": "https://github.com/TauricResearch/TradingAgents",
       "status": "present"
     },
     {
+      "classification": "skillpack",
       "domain": "design",
       "evidence": [
         "/root/.agents/plugins/skills/ui-ux-designer",
@@ -585,7 +616,7 @@
       "name": "ui-ux-pro-max-skill",
       "notes": "Local evidence found; review before installing anything new.",
       "recommended_action": "normalize",
-      "risk": "unknown",
+      "risk": "low",
       "source_url": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
       "status": "present"
     }

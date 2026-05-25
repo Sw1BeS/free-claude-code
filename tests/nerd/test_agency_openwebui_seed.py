@@ -34,7 +34,12 @@ def test_mission_control_prompts_define_core_workspace_commands():
     mission = by_command["mission_control"]
     assert mission.name == "NERD Agency Mission Control"
     assert "https://agency.umanoff-analytics.space" in mission.content
-    assert "loopback-only" in mission.content
+    assert "https://automations.umanoff-analytics.space" in mission.content
+    assert "https://obs.umanoff-analytics.space" in mission.content
+    assert "raw backend" in mission.content.lower()
+    assert "127.0.0.1" not in mission.content
+    assert "172.20.0.1" not in mission.content
+    assert "localhost" not in mission.content
     assert "nerd-agency" in mission.tags
     assert "secret" not in mission.content.lower()
 

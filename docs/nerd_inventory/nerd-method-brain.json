@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-24T07:08:36Z",
+  "generated_at": "2026-05-24T17:25:52Z",
   "items": [
     {
       "domain": "brain-source",
@@ -18,43 +18,43 @@
     {
       "domain": "brain-codegraph",
       "evidence": [
-        "http://127.0.0.1:4173"
+        "https://agency.umanoff-analytics.space/nerd-os/"
       ],
       "id": "brain-gitnexus",
       "kind": "service",
       "name": "GitNexus Code Graph",
-      "notes": "Internal loopback code graph service",
+      "notes": "Code intelligence surface is linked through NERD OS; raw backend remains private",
       "recommended_action": "keep",
       "risk": "low",
-      "source_url": "http://127.0.0.1:4173",
+      "source_url": "https://agency.umanoff-analytics.space/nerd-os/",
       "status": "active"
     },
     {
       "domain": "brain-observability",
       "evidence": [
-        "http://127.0.0.1:3300"
+        "https://obs.umanoff-analytics.space"
       ],
       "id": "brain-langfuse",
       "kind": "service",
       "name": "Langfuse Observability",
-      "notes": "Internal loopback observability service",
+      "notes": "Observability workspace route; raw trace backend remains private",
       "recommended_action": "keep",
       "risk": "low",
-      "source_url": "http://127.0.0.1:3300",
+      "source_url": "https://obs.umanoff-analytics.space",
       "status": "active"
     },
     {
       "domain": "brain-automation",
       "evidence": [
-        "http://127.0.0.1:5678"
+        "https://automations.umanoff-analytics.space"
       ],
       "id": "brain-n8n",
       "kind": "service",
       "name": "n8n Automation",
-      "notes": "Internal loopback automation service",
+      "notes": "Automation workspace route; raw n8n backend remains private",
       "recommended_action": "keep",
       "risk": "medium",
-      "source_url": "http://127.0.0.1:5678",
+      "source_url": "https://automations.umanoff-analytics.space",
       "status": "active"
     },
     {

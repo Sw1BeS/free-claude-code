@@ -30,20 +30,24 @@ PUBLIC_DOMAINS = {
     "cms": "CMS and commerce workspace routed to Mission Control",
 }
 INTERNAL_SERVICES = {
-    "open-webui": "http://127.0.0.1:38080",
-    "n8n": "http://127.0.0.1:5678",
-    "langfuse": "http://127.0.0.1:3300",
-    "litellm": "http://127.0.0.1:44000",
-    "ollama": "http://127.0.0.1:11434",
-    "grafana": "http://127.0.0.1:3002",
-    "gitnexus": "http://127.0.0.1:4173",
-    "free-claude-admin": "http://127.0.0.1:18082/admin",
+    "open-webui": "https://agency.umanoff-analytics.space",
+    "n8n": "https://automations.umanoff-analytics.space",
+    "langfuse": "https://obs.umanoff-analytics.space",
+    "litellm": "https://agency.umanoff-analytics.space/nerd-os/",
+    "ollama": "https://agency.umanoff-analytics.space/nerd-os/",
+    "grafana": "https://obs.umanoff-analytics.space",
+    "gitnexus": "https://agency.umanoff-analytics.space/nerd-os/",
+    "free-claude-admin": "https://agency.umanoff-analytics.space/nerd-os/",
 }
 ACTIVATION_PACKS = {
     "daily": "GitHub, GitNexus, n8n, Open WebUI, Langfuse, Obsidian, NotebookLM",
     "cms-commerce": "WordPress, WooCommerce, Shopify, SEO, analytics",
     "data": "Polars, vector DB, scraping, data analytics",
+    "github-dev": "Git guard, canonical repo policy, GitHub triage, GitNexus, CodeGraph, Spec Kit",
+    "knowledge": "Open WebUI knowledge, Obsidian, NotebookLM, prompt library, provenance, reports",
+    "design": "OpenUI, open-design, design systems, graph reports, UI generation",
     "security-safe": "Audit/review only; no offensive active tooling in V1",
+    "product-growth": "Client offers, digital products, templates, guides, commercialization",
 }
 MEMORY_LAYERS = {
     "system": "Open WebUI knowledge, NERD inventory, manifest, service directory, and operating policies",
@@ -51,6 +55,12 @@ MEMORY_LAYERS = {
     "clients": "Client context, preferences, constraints, and reusable delivery patterns",
     "prompts": "Prompt library, reusable skills, activation packs, and workflow templates",
     "traces": "Langfuse traces, Grafana links, n8n executions, and incident notes",
+}
+GITHUB_POLICY_ITEMS = {
+    "canonical-origin": "origin is the user-owned writable canonical remote; branch tracking must point to origin",
+    "protected-upstream": "upstream is the read-only original source remote and must not accept pushes",
+    "git-guard": "scripts/git-guard.sh checks branch, remotes, dirty tree, ownership, and token patterns before push work",
+    "status-panel": "NERD OS exposes branch, dirty count, unpushed commits, canonical repo, and upstream protection",
 }
 
 
@@ -63,6 +73,7 @@ def _item(
     domain: str,
     risk: str,
     path: Path | None = None,
+    source_url: str | None = None,
     notes: str | None = None,
     action: str = "keep",
 ) -> InventoryItem:
@@ -74,6 +85,7 @@ def _item(
         domain=domain,
         risk=cast(Risk, risk),
         path=str(path) if path else None,
+        source_url=source_url,
         evidence=[str(path)] if path else [],
         recommended_action=cast(Action, action),
         notes=notes,
@@ -98,7 +110,7 @@ def build_mission_control_report(
             domain="mission-control",
             risk="medium",
             path=stack_dir,
-            notes=f"public_url={PUBLIC_URL}; open_webui_loopback=http://127.0.0.1:38080",
+            notes=f"public_url={PUBLIC_URL}; route_policy=domain_first_raw_backends_private",
         )
     )
 
@@ -196,7 +208,7 @@ def build_mission_control_report(
             )
         )
 
-    for service, url in INTERNAL_SERVICES.items():
+    for service, public_route in INTERNAL_SERVICES.items():
         risk = "medium" if service in {"open-webui", "free-claude-admin"} else "low"
         items.append(
             _item(
@@ -206,8 +218,26 @@ def build_mission_control_report(
                 status="active" if stack_status == "present" else "investigate",
                 domain="service-map",
                 risk=risk,
-                notes=f"internal_url={url}",
+                source_url=public_route,
+                notes=f"public_route={public_route}; backend_scope=private",
                 action="keep",
+            )
+        )
+
+    for slug, description in GITHUB_POLICY_ITEMS.items():
+        items.append(
+            _item(
+                item_id=f"github-policy-{slug}",
+                name=f"GitHub Policy: {slug.replace('-', ' ').title()}",
+                kind="config",
+                status="present",
+                domain="github-hardening",
+                risk="low" if slug != "protected-upstream" else "medium",
+                path=Path("/root/nerd-claude-free-staging/scripts/git-guard.sh")
+                if slug == "git-guard"
+                else stack_dir / "nerd-agency.manifest.yaml",
+                notes=description,
+                action="keep" if slug == "git-guard" else "normalize",
             )
         )
 

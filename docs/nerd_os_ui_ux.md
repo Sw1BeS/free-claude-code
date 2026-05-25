@@ -26,7 +26,7 @@ The interface should feel like a dense mission OS:
 
 - Dark operational shell, not decorative hero UI.
 - High contrast status colors: green for healthy, amber for attention, red for blocked/failing, blue for running.
-- Left rail: Command Center, Agents, Automations, Memory, Build, Observability, Lab, Settings.
+- Left rail: Command Center, Virtual Office, Agents, Tasks, Automations, Memory, Knowledge, GitHub, Build Studio, CMS/Commerce, Data Studio, Product/Growth, Observability, Lab, Settings.
 - Main area: selected surface with grouped module cards and run history.
 - Right drawer: selected module details, docs, last output, policy, and related knowledge.
 - Blueprint view: visual OS map that shows entry points, shared brain, tool mesh, automation fabric, and observability in one screen.
@@ -37,10 +37,11 @@ The first executable kernel is `nerd-os`:
 
 - `nerd-os list` exposes the module/action registry.
 - `nerd-os run <action_id>` runs only allowlisted actions.
-- `nerd-os serve` exposes an internal Docker-network API at `172.20.0.1:38181`.
+- `nerd-os serve` is exposed to users through `https://agency.umanoff-analytics.space/nerd-os/`; backend bridge addresses are implementation details only.
 - `https://agency.umanoff-analytics.space/nerd-os/` exposes the first protected dashboard.
 - `https://agency.umanoff-analytics.space/nerd-os/blueprint` exposes the protected visual blueprint.
 - `https://agency.umanoff-analytics.space/nerd-os/office` exposes the protected virtual office concept for visible agent roles and activity lanes.
 - `/api/runs` exposes recent run history without storing stdout/stderr in the summary log.
+- `/api/git/status` exposes canonical repo, branch, dirty count, unpushed commits, and upstream protection state.
 
 Open WebUI and n8n should call this runner instead of directly shelling out to random tools.

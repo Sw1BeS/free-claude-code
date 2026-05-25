@@ -69,6 +69,13 @@ def test_brain_report_contains_canonical_sources_and_sync_targets(tmp_path):
     assert by_id["brain-gitnexus"].status == "active"
     assert by_id["brain-n8n"].status == "active"
     assert by_id["brain-langfuse"].status == "active"
+    assert by_id["brain-gitnexus"].source_url == (
+        "https://agency.umanoff-analytics.space/nerd-os/"
+    )
+    assert by_id["brain-n8n"].source_url == (
+        "https://automations.umanoff-analytics.space"
+    )
+    assert by_id["brain-langfuse"].source_url == "https://obs.umanoff-analytics.space"
     assert by_id["brain-sync-openwebui-seed"].status == "present"
     assert by_id["brain-sync-stack-seed"].domain == "brain-sync"
     assert report.warnings == []
@@ -105,3 +112,24 @@ def test_brain_report_investigates_missing_paths_and_warns_on_brain_gaps(tmp_pat
     assert "sk-" not in notes
     assert "password" not in notes.lower()
     assert "api_key" not in notes.lower()
+
+
+def test_brain_report_public_service_links_do_not_expose_local_ips(tmp_path):
+    brain = load_module("inventory_brain_domain_routes", BRAIN_PATH)
+
+    report = brain.build_brain_report(
+        tmp_path / "workspace",
+        tmp_path / "agency-stack",
+        tmp_path / "staging",
+        tmp_path / "nerd-method",
+        tmp_path / "obsidian-vault",
+    )
+    text = "\n".join(
+        " ".join([item.source_url or "", item.notes or "", *item.evidence])
+        for item in report.items
+    )
+
+    assert "https://agency.umanoff-analytics.space" in text
+    assert "http://127.0.0.1" not in text
+    assert "http://172.20.0.1" not in text
+    assert "localhost" not in text

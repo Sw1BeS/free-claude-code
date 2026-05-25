@@ -1,17 +1,17 @@
 # NERD Method Brain
 
-Generated: `2026-05-24T07:08:36Z`
+Generated: `2026-05-24T17:25:52Z`
 
 | ID | Name | Kind | Status | Domain | Risk | Action |
 | --- | --- | --- | --- | --- | --- | --- |
 | `brain-canonical-repo` | Brain Canonical Repo | repo | present | brain-source | medium | keep |
 |  | path=/root/nerd-claude-free-staging; notes=Versioned implementation source for NERD-METHOD inventory and sync scripts; evidence=/root/nerd-claude-free-staging |  |  |  |  |  |
 | `brain-gitnexus` | GitNexus Code Graph | service | active | brain-codegraph | low | keep |
-|  | source=http://127.0.0.1:4173; notes=Internal loopback code graph service; evidence=http://127.0.0.1:4173 |  |  |  |  |  |
+|  | source=https://agency.umanoff-analytics.space/nerd-os/; notes=Code intelligence surface is linked through NERD OS; raw backend remains private; evidence=https://agency.umanoff-analytics.space/nerd-os/ |  |  |  |  |  |
 | `brain-langfuse` | Langfuse Observability | service | active | brain-observability | low | keep |
-|  | source=http://127.0.0.1:3300; notes=Internal loopback observability service; evidence=http://127.0.0.1:3300 |  |  |  |  |  |
+|  | source=https://obs.umanoff-analytics.space; notes=Observability workspace route; raw trace backend remains private; evidence=https://obs.umanoff-analytics.space |  |  |  |  |  |
 | `brain-n8n` | n8n Automation | service | active | brain-automation | medium | keep |
-|  | source=http://127.0.0.1:5678; notes=Internal loopback automation service; evidence=http://127.0.0.1:5678 |  |  |  |  |  |
+|  | source=https://automations.umanoff-analytics.space; notes=Automation workspace route; raw n8n backend remains private; evidence=https://automations.umanoff-analytics.space |  |  |  |  |  |
 | `brain-nerd-method` | NERD Method Knowledge | repo | present | brain-knowledge | medium | normalize |
 |  | path=/root/nerd-method; notes=Knowledge repo expected to hold normalized NERD-METHOD operating material; evidence=/root/nerd-method |  |  |  |  |  |
 | `brain-obsidian-vault` | Obsidian Vault | dir | present | brain-surface | low | normalize |

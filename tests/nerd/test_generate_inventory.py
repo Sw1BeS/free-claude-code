@@ -105,6 +105,8 @@ def test_generate_inventory_main_writes_expected_reports(tmp_path):
         "gitinspired-catalog.md",
         "cms-candidates.json",
         "cms-candidates.md",
+        "autonomous-core.json",
+        "autonomous-core.md",
         "claudecore-codemap.md",
         "mission-control-stack.json",
         "mission-control-stack.md",

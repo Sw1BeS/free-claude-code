@@ -8,6 +8,15 @@ from typing import Literal
 Kind = Literal[
     "repo", "dir", "skill", "service", "config", "doc", "archive", "candidate"
 ]
+Classification = Literal[
+    "installed",
+    "source-cache",
+    "skillpack",
+    "runtime-candidate",
+    "research-only",
+    "high-risk-disabled",
+    "deferred",
+]
 Status = Literal[
     "active",
     "staged",
@@ -43,6 +52,7 @@ class InventoryItem:
     status: Status
     domain: str = "general"
     risk: Risk = "unknown"
+    classification: Classification | None = None
     path: str | None = None
     source_url: str | None = None
     evidence: list[str] = field(default_factory=list)
@@ -55,11 +65,13 @@ class InventoryItem:
             "name": self.name,
             "kind": self.kind,
             "status": self.status,
-            "domain": self.domain,
             "risk": self.risk,
+            "domain": self.domain,
             "recommended_action": self.recommended_action,
             "evidence": sorted(self.evidence),
         }
+        if self.classification is not None:
+            data["classification"] = self.classification
         if self.path is not None:
             data["path"] = self.path
         if self.source_url is not None:

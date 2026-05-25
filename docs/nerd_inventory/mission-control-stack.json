@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-24T07:08:36Z",
+  "generated_at": "2026-05-24T17:25:52Z",
   "items": [
     {
       "domain": "skills",
@@ -48,6 +48,62 @@
       "evidence": [
         "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
       ],
+      "id": "activation-pack-design",
+      "kind": "config",
+      "name": "Activation Pack: design",
+      "notes": "OpenUI, open-design, design systems, graph reports, UI generation",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "activation-pack-github-dev",
+      "kind": "config",
+      "name": "Activation Pack: github-dev",
+      "notes": "Git guard, canonical repo policy, GitHub triage, GitNexus, CodeGraph, Spec Kit",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "activation-pack-knowledge",
+      "kind": "config",
+      "name": "Activation Pack: knowledge",
+      "notes": "Open WebUI knowledge, Obsidian, NotebookLM, prompt library, provenance, reports",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "activation-pack-product-growth",
+      "kind": "config",
+      "name": "Activation Pack: product-growth",
+      "notes": "Client offers, digital products, templates, guides, commercialization",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "skills",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
       "id": "activation-pack-security-safe",
       "kind": "config",
       "name": "Activation Pack: security-safe",
@@ -55,6 +111,62 @@
       "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
       "recommended_action": "normalize",
       "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "github-hardening",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "github-policy-canonical-origin",
+      "kind": "config",
+      "name": "GitHub Policy: Canonical Origin",
+      "notes": "origin is the user-owned writable canonical remote; branch tracking must point to origin",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "github-hardening",
+      "evidence": [
+        "/root/nerd-claude-free-staging/scripts/git-guard.sh"
+      ],
+      "id": "github-policy-git-guard",
+      "kind": "config",
+      "name": "GitHub Policy: Git Guard",
+      "notes": "scripts/git-guard.sh checks branch, remotes, dirty tree, ownership, and token patterns before push work",
+      "path": "/root/nerd-claude-free-staging/scripts/git-guard.sh",
+      "recommended_action": "keep",
+      "risk": "low",
+      "status": "present"
+    },
+    {
+      "domain": "github-hardening",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "github-policy-protected-upstream",
+      "kind": "config",
+      "name": "GitHub Policy: Protected Upstream",
+      "notes": "upstream is the read-only original source remote and must not accept pushes",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "medium",
+      "status": "present"
+    },
+    {
+      "domain": "github-hardening",
+      "evidence": [
+        "/root/nerd-agency-stack/nerd-agency.manifest.yaml"
+      ],
+      "id": "github-policy-status-panel",
+      "kind": "config",
+      "name": "GitHub Policy: Status Panel",
+      "notes": "NERD OS exposes branch, dirty count, unpushed commits, canonical repo, and upstream protection",
+      "path": "/root/nerd-agency-stack/nerd-agency.manifest.yaml",
+      "recommended_action": "normalize",
+      "risk": "low",
       "status": "present"
     },
     {
@@ -227,7 +339,7 @@
       "id": "nerd-agency-stack",
       "kind": "dir",
       "name": "NERD Agency Stack",
-      "notes": "public_url=https://agency.umanoff-analytics.space; open_webui_loopback=http://127.0.0.1:38080",
+      "notes": "public_url=https://agency.umanoff-analytics.space; route_policy=domain_first_raw_backends_private",
       "path": "/root/nerd-agency-stack",
       "recommended_action": "keep",
       "risk": "medium",
@@ -323,9 +435,10 @@
       "id": "service-free-claude-admin",
       "kind": "service",
       "name": "Internal Service: free-claude-admin",
-      "notes": "internal_url=http://127.0.0.1:18082/admin",
+      "notes": "public_route=https://agency.umanoff-analytics.space/nerd-os/; backend_scope=private",
       "recommended_action": "keep",
       "risk": "medium",
+      "source_url": "https://agency.umanoff-analytics.space/nerd-os/",
       "status": "active"
     },
     {
@@ -334,9 +447,10 @@
       "id": "service-gitnexus",
       "kind": "service",
       "name": "Internal Service: gitnexus",
-      "notes": "internal_url=http://127.0.0.1:4173",
+      "notes": "public_route=https://agency.umanoff-analytics.space/nerd-os/; backend_scope=private",
       "recommended_action": "keep",
       "risk": "low",
+      "source_url": "https://agency.umanoff-analytics.space/nerd-os/",
       "status": "active"
     },
     {
@@ -345,9 +459,10 @@
       "id": "service-grafana",
       "kind": "service",
       "name": "Internal Service: grafana",
-      "notes": "internal_url=http://127.0.0.1:3002",
+      "notes": "public_route=https://obs.umanoff-analytics.space; backend_scope=private",
       "recommended_action": "keep",
       "risk": "low",
+      "source_url": "https://obs.umanoff-analytics.space",
       "status": "active"
     },
     {
@@ -356,9 +471,10 @@
       "id": "service-langfuse",
       "kind": "service",
       "name": "Internal Service: langfuse",
-      "notes": "internal_url=http://127.0.0.1:3300",
+      "notes": "public_route=https://obs.umanoff-analytics.space; backend_scope=private",
       "recommended_action": "keep",
       "risk": "low",
+      "source_url": "https://obs.umanoff-analytics.space",
       "status": "active"
     },
     {
@@ -367,9 +483,10 @@
       "id": "service-litellm",
       "kind": "service",
       "name": "Internal Service: litellm",
-      "notes": "internal_url=http://127.0.0.1:44000",
+      "notes": "public_route=https://agency.umanoff-analytics.space/nerd-os/; backend_scope=private",
       "recommended_action": "keep",
       "risk": "low",
+      "source_url": "https://agency.umanoff-analytics.space/nerd-os/",
       "status": "active"
     },
     {
@@ -378,9 +495,10 @@
       "id": "service-n8n",
       "kind": "service",
       "name": "Internal Service: n8n",
-      "notes": "internal_url=http://127.0.0.1:5678",
+      "notes": "public_route=https://automations.umanoff-analytics.space; backend_scope=private",
       "recommended_action": "keep",
       "risk": "low",
+      "source_url": "https://automations.umanoff-analytics.space",
       "status": "active"
     },
     {
@@ -389,9 +507,10 @@
       "id": "service-ollama",
       "kind": "service",
       "name": "Internal Service: ollama",
-      "notes": "internal_url=http://127.0.0.1:11434",
+      "notes": "public_route=https://agency.umanoff-analytics.space/nerd-os/; backend_scope=private",
       "recommended_action": "keep",
       "risk": "low",
+      "source_url": "https://agency.umanoff-analytics.space/nerd-os/",
       "status": "active"
     },
     {
@@ -400,9 +519,10 @@
       "id": "service-open-webui",
       "kind": "service",
       "name": "Internal Service: open-webui",
-      "notes": "internal_url=http://127.0.0.1:38080",
+      "notes": "public_route=https://agency.umanoff-analytics.space; backend_scope=private",
       "recommended_action": "keep",
       "risk": "medium",
+      "source_url": "https://agency.umanoff-analytics.space",
       "status": "active"
     }
   ],

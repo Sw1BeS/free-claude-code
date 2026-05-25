@@ -121,12 +121,14 @@ def mission_control_prompts() -> list[PromptSeed]:
                 "[NERD-CLAUDE]-free. Public entry is "
                 "https://agency.umanoff-analytics.space. Workspace hostnames "
                 "agents, automations, memory, obs, and cms all route to the "
-                "same Open WebUI shell. Backends stay loopback-only: n8n "
-                "127.0.0.1:5678, Langfuse 127.0.0.1:3300, LiteLLM "
-                "127.0.0.1:44000, Ollama 127.0.0.1:11434, GitNexus "
-                "127.0.0.1:4173, and free-claude staged admin "
-                "127.0.0.1:18082/admin. Prefer allowlisted V1 workflows, "
-                "inventory reports, and trace links before raw backend access."
+                "same Open WebUI shell. Use "
+                "https://agency.umanoff-analytics.space/nerd-os/ for NERD OS, "
+                "https://automations.umanoff-analytics.space for automation, "
+                "https://memory.umanoff-analytics.space for shared memory, "
+                "https://obs.umanoff-analytics.space for observability, and "
+                "https://cms.umanoff-analytics.space for CMS/commerce. Raw "
+                "backend access remains private; prefer allowlisted V1 "
+                "workflows, inventory reports, and trace links."
             ),
         ),
         PromptSeed(

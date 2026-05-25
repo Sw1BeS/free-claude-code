@@ -64,6 +64,9 @@ def render_report_markdown(title: str, report: InventoryReport) -> str:
             detail = "; ".join(
                 part
                 for part in [
+                    f"classification={item.classification}"
+                    if item.classification
+                    else "",
                     f"path={item.path}" if item.path else "",
                     f"source={item.source_url}" if item.source_url else "",
                     f"notes={redact(item.notes)}" if item.notes else "",

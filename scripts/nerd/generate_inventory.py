@@ -7,6 +7,7 @@ from pathlib import Path
 
 if __package__ in {None, ""}:
     sys.path.append(str(Path(__file__).resolve().parents[2]))
+    from scripts.nerd.inventory.autonomous_core import build_autonomous_core_report
     from scripts.nerd.inventory.brain import build_brain_report
     from scripts.nerd.inventory.cms import build_cms_candidate_report
     from scripts.nerd.inventory.codemap import build_claudecore_codemap
@@ -17,6 +18,7 @@ if __package__ in {None, ""}:
     from scripts.nerd.inventory.skills import KNOWN_SKILL_ROOTS, scan_skill_roots
     from scripts.nerd.inventory.workspace import generated_at, scan_workspace
 else:
+    from .inventory.autonomous_core import build_autonomous_core_report
     from .inventory.brain import build_brain_report
     from .inventory.cms import build_cms_candidate_report
     from .inventory.codemap import build_claudecore_codemap
@@ -110,6 +112,7 @@ def main(argv: list[str] | None = None) -> int:
     gitinspired_report = build_gitinspired_catalog(search_roots=gitinspired_roots)
     codemap_report = build_claudecore_codemap(args.staging_dir, args.legacy_dir)
     cms_report = build_cms_candidate_report()
+    autonomous_report = build_autonomous_core_report(args.nerd_method_dir)
     mission_report = build_mission_control_report(args.agency_stack_dir)
     brain_report = build_brain_report(
         args.workspace_root,
@@ -141,6 +144,12 @@ def main(argv: list[str] | None = None) -> int:
         "cms-candidates",
         "CMS And Commerce Candidates",
         cms_report,
+    )
+    write_report_pair(
+        args.output_dir,
+        "autonomous-core",
+        "Autonomous Core",
+        autonomous_report,
     )
     write_report_pair(
         args.output_dir,

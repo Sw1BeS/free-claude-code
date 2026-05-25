@@ -42,19 +42,22 @@ def test_requested_repository_metadata_is_specific():
         "CloakBrowser": (
             "browser-automation",
             ("cloakbrowser", "cloak-browser", "cloak"),
+            "high-risk-disabled",
         ),
-        "ruflo": ("agents", ("ruflo", "ruvflo", "claude-flow")),
-        "codegraph": ("code-graph", ("codegraph", "code-graph")),
-        "cc-switch": ("desktop-control", ("cc-switch", "ccswitch")),
+        "ruflo": ("agents", ("ruflo", "ruvflo", "claude-flow"), "runtime-candidate"),
+        "codegraph": ("code-graph", ("codegraph", "code-graph"), "installed"),
+        "cc-switch": ("desktop-control", ("cc-switch", "ccswitch"), "deferred"),
         "notebooklm-py": (
             "google",
             ("notebooklm-py", "notebooklm.py", "notebooklm_api"),
+            "runtime-candidate",
         ),
     }
 
-    for name, (domain, aliases) in expected.items():
+    for name, (domain, aliases, classification) in expected.items():
         assert repos_by_name[name].domain == domain
         assert repos_by_name[name].aliases == aliases
+        assert repos_by_name[name].classification == classification
 
     agency_agents_notes = repos_by_name["agency-agents"].notes.lower()
     assert "not a runtime service" in agency_agents_notes
@@ -73,6 +76,7 @@ def test_classify_candidate_from_skill_evidence(tmp_path):
             source_url="https://github.com/PleasePrompto/notebooklm-skill",
             domain="google",
             aliases=("notebooklm",),
+            classification="skillpack",
         ),
         search_roots=[tmp_path],
     )
@@ -80,6 +84,7 @@ def test_classify_candidate_from_skill_evidence(tmp_path):
     assert item.status == "present"
     assert item.recommended_action == "normalize"
     assert item.domain == "google"
+    assert item.classification == "skillpack"
 
 
 def test_notebooklm_py_ignores_generic_notebooklm_skill_evidence(tmp_path):
@@ -120,6 +125,7 @@ def test_build_catalog_marks_missing_when_no_evidence(tmp_path):
                 source_url="https://github.com/example/missing-tool",
                 domain="general",
                 aliases=("missing-tool",),
+                classification="deferred",
             )
         ],
         search_roots=[tmp_path],
@@ -127,6 +133,25 @@ def test_build_catalog_marks_missing_when_no_evidence(tmp_path):
 
     assert report.items[0].status == "missing"
     assert report.items[0].recommended_action == "install_later"
+    assert report.items[0].classification == "deferred"
+
+
+def test_high_risk_candidates_stay_disabled_even_when_present(tmp_path):
+    gitinspired = load_gitinspired()
+    local_repo = tmp_path / "tools" / "CloakBrowser"
+    local_repo.mkdir(parents=True)
+    repos_by_name = {entry.name: entry for entry in gitinspired.GITINSPIRED_REPOS}
+
+    item = gitinspired.classify_candidate(
+        repos_by_name["CloakBrowser"],
+        search_roots=[tmp_path],
+    )
+
+    assert item.status == "present"
+    assert item.classification == "high-risk-disabled"
+    assert item.risk == "high"
+    assert item.recommended_action == "skip"
+    assert "disabled" in (item.notes or "").lower()
 
 
 def test_new_candidates_mark_missing_without_evidence(tmp_path):

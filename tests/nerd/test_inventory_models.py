@@ -38,14 +38,17 @@ def test_inventory_item_serializes_with_sorted_keys():
         path="/tmp/wordpress",
         evidence=["/tmp/wordpress/SKILL.md"],
         recommended_action="normalize",
+        classification="skillpack",
     )
 
     payload = item.to_dict()
     rendered = models.to_pretty_json({"items": [payload]})
 
+    assert payload["classification"] == "skillpack"
     assert payload["id"] == "wordpress"
     assert payload["evidence"] == ["/tmp/wordpress/SKILL.md"]
     assert rendered.endswith("\n")
+    assert rendered.index('"classification"') < rendered.index('"domain"')
     assert rendered.index('"domain"') < rendered.index('"evidence"')
 
 
