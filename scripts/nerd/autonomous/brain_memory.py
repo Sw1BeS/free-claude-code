@@ -8,6 +8,7 @@ from pathlib import Path
 
 from scripts.nerd.autonomous.bootstrap import generated_at
 from scripts.nerd.autonomous.models import DEFAULT_CANONICAL_ROOT, write_json
+from scripts.nerd.brain.store import build_brain_store_snapshot, brain_db_path
 
 DEFAULT_STAGING_ROOT = Path("/root/nerd-claude-free-staging")
 DEFAULT_HERMES_ROOT = Path("/root/hermes")
@@ -153,8 +154,33 @@ def build_brain_memory_registry(
     ceo_identity = hermes_core / "CEO_IDENTITY.md"
     objectives = hermes_core / "objectives.json"
     status = hermes_core / "status.json"
+    brain_store = build_brain_store_snapshot(canonical_root)
 
     items = [
+        _item(
+            id="brain-store-db",
+            name="NERD Brain Store",
+            kind="database",
+            classification="canonical_brain_store",
+            status=str(brain_store.get("status") or "missing"),
+            risk="medium",
+            path=brain_db_path(canonical_root),
+            evidence=[str(brain_db_path(canonical_root))]
+            if brain_db_path(canonical_root).is_file()
+            else [],
+            metadata={
+                "schema_version": brain_store.get("schema_version"),
+                "source_count": brain_store.get("source_count", 0),
+                "episode_count": brain_store.get("episode_count", 0),
+                "candidate_count": brain_store.get("candidate_count", 0),
+                "approved_count": brain_store.get("approved_count", 0),
+                "last_episode_at": brain_store.get("last_episode_at"),
+            },
+            notes=(
+                "DB-backed second brain store. JSON registries remain mirrors "
+                "for agents and UI surfaces."
+            ),
+        ),
         _path_item(
             id="brain-memory-root",
             name="NERD Method Writable Memory",

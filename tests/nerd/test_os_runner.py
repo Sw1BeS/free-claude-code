@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import io
 import subprocess
 import sys
+from email.message import Message
 from pathlib import Path
 from typing import cast
 
@@ -11,12 +13,15 @@ from scripts.nerd.os.runner import (
     ActionRegistry,
     ActionRunner,
     DisabledActionError,
+    MAX_JSON_BODY_BYTES,
+    _read_json_body,
     action_summary,
     autonomous_action_console_payload,
     autonomous_action_requests_payload,
     autonomous_api_payload,
     autonomous_approval_payload,
     autonomous_brain_payload,
+    autonomous_brain_store_payload,
     autonomous_github_radar_payload,
     autonomous_hermes_payload,
     autonomous_hermes_repair_payload,
@@ -31,15 +36,18 @@ from scripts.nerd.os.runner import (
     autonomous_workflows_payload,
     create_action_approval_request,
     create_autonomous_inbox_record,
+    create_autonomous_brain_record,
     create_brainstorming_trackio_idea,
     decide_action_approval_request,
     execute_approved_action_request,
     git_status_summary,
     main,
     promote_brainstorming_trackio_idea,
+    promote_autonomous_brain_candidate,
     public_service_links,
     read_recent_runs,
     render_blueprint_html,
+    render_brain_html,
     render_dashboard_html,
     render_office_html,
     render_page_html,
@@ -319,6 +327,7 @@ def test_action_registry_contains_autonomous_core_actions():
     assert "autonomous_existing_work_refresh" in action_ids
     assert "autonomous_runtime_registry_refresh" in action_ids
     assert "autonomous_brain_memory_refresh" in action_ids
+    assert "autonomous_brain_store_sync" in action_ids
     assert "autonomous_brain_intake_n8n_dry_run" in action_ids
     assert "autonomous_brain_intake_telegram_dry_run" in action_ids
     assert "autonomous_hermes_agents_refresh" in action_ids
@@ -696,6 +705,9 @@ def test_brain_hermes_and_update_routes_render_canonical_records(tmp_path):
 
     assert brain_html is not None
     assert "Autonomous Brain" in brain_html
+    assert "NERD OS Second Brain" in brain_html
+    assert 'id="brainIntakeForm"' in brain_html
+    assert "/api/autonomous/brain" in brain_html
     assert "brain-srv-nerd-knowledge" in brain_html
     assert "Open WebUI" not in brain_html
     assert "Paperclip" not in brain_html
@@ -710,6 +722,24 @@ def test_brain_hermes_and_update_routes_render_canonical_records(tmp_path):
     assert "hermes-runtime-bundle-layout" in repair_html
     assert prefixed_html is not None
     assert "Autonomous Brain" in prefixed_html
+
+
+def test_brain_html_renders_store_snapshot_sources_and_candidates(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    write_actions(actions_path)
+    registry = ActionRegistry.load(actions_path)
+    result = create_autonomous_brain_record(
+        {"text": "Remember: the second brain has a DB-backed store.", "source": "operator"},
+        canonical_root=tmp_path,
+    )
+
+    html = render_brain_html(registry, canonical_root=tmp_path)
+
+    assert result["brain_store"]["candidate_count"] == 1
+    assert "NERD OS Second Brain" in html
+    assert "source_operator" in html
+    assert result["candidate"]["id"] in html
+    assert "/api/autonomous/brain-store" in html
 
 
 def test_mission_control_route_renders_operator_shell_sections(tmp_path):
@@ -873,6 +903,7 @@ def test_autonomous_specialized_payloads_read_new_registries(tmp_path):
     )
 
     assert autonomous_brain_payload(tmp_path)["items"][0]["id"] == "brain-memory-root"
+    assert autonomous_brain_store_payload(tmp_path)["store"]["status"] == "missing"
     assert autonomous_hermes_payload(tmp_path)["items"][0]["id"] == "hermes-agent-ceo"
     assert autonomous_updates_payload(tmp_path)["items"][0]["id"] == (
         "update-hermes-agent-runtime"
@@ -905,6 +936,11 @@ def test_autonomous_specialized_payloads_read_new_registries(tmp_path):
     assert "overview" in mission
     assert mission["sections"]["skills"][0]["id"] == "skill-memory-curation"
     assert mission["sections"]["github_radar"][0]["id"] == "github-radar-staging-repo"
+    assert "brain_store" in mission["sections"]
+    assert "brain_graph" in mission["sections"]
+    assert "brain_harness" in mission["sections"]
+    assert mission["sections"]["brain_graph"]["status"] == "missing"
+    assert mission["sections"]["brain_harness"]["candidate_count"] == 0
 
 
 def test_autonomous_api_payload_maps_mission_control_and_registry_routes(tmp_path):
@@ -947,6 +983,23 @@ def test_autonomous_api_payload_maps_mission_control_and_registry_routes(tmp_pat
         "/api/autonomous/run-detail/run_20260525T010000Z_stack_status",
         tmp_path,
     )
+    brain_store = autonomous_api_payload("/api/autonomous/brain-store", tmp_path)
+    created_brain = create_autonomous_brain_record(
+        {"text": "Searchable brain API memory", "source": "operator"},
+        canonical_root=tmp_path,
+    )
+    brain_search = autonomous_api_payload(
+        "/api/autonomous/brain/search?q=Searchable&limit=3",
+        tmp_path,
+    )
+    brain_context = autonomous_api_payload(
+        "/api/autonomous/brain/context?q=Searchable&limit=3",
+        tmp_path,
+    )
+    brain_detail = autonomous_api_payload(
+        f"/api/autonomous/brain/candidates/{created_brain['candidate']['id']}",
+        tmp_path,
+    )
 
     mission_payload = autonomous_api_payload("/api/mission-control", tmp_path)
 
@@ -975,20 +1028,122 @@ def test_autonomous_api_payload_maps_mission_control_and_registry_routes(tmp_pat
         "workflows",
         "github_radar",
         "brain",
+        "brain_store",
+        "brain_graph",
+        "brain_harness",
         "integrations",
         "observability",
         "system_health",
         "brainstorming_trackio",
         "action_console",
         "action_requests",
+        "operation_graph",
+        "attention_queue",
+        "evidence_index",
+        "domain_routes",
+        "policy_matrix",
     ]:
         assert section in mission_payload["sections"]
+    assert mission_payload["schema_version"] == "mission_control.v2"
+    assert mission_payload["auth_state"]["status"] == "externalized"
+    assert mission_payload["secret_status"]["status"] == "redaction_enabled"
     assert action_requests is not None
     assert action_requests["items"] == []
     assert trackio_payload is not None
     assert trackio_payload["items"] == []
     assert run_detail is not None
     assert run_detail["item"]["action_id"] == "stack_status"
+    assert brain_store is not None
+    assert brain_store["store"]["status"] == "missing"
+    assert brain_search is not None
+    assert brain_search["status"] == "ok"
+    assert brain_search["results"][0]["candidate_id"] == created_brain["candidate"]["id"]
+    assert brain_context is not None
+    assert brain_context["recall_status"] == "ok"
+    assert brain_context["recall"][0]["candidate_id"] == created_brain["candidate"]["id"]
+    assert "NERD OS Second Brain Context Pack" in brain_context["markdown"]
+    assert brain_detail is not None
+    assert brain_detail["candidate"]["id"] == created_brain["candidate"]["id"]
+    assert brain_detail["source"]["id"] == "source_operator"
+
+
+def test_mission_control_v2_sections_reuse_registry_runs_and_actions(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    write_actions(actions_path)
+    registry = ActionRegistry.load(actions_path)
+    registry_dir = tmp_path / "registry"
+    tasks_dir = tmp_path / "memory" / "tasks"
+    registry_dir.mkdir(parents=True)
+    tasks_dir.mkdir(parents=True)
+    (registry_dir / "hermes-agents.json").write_text(
+        '{"items": [{"id": "hermes-agent-ceo", "name": "Hermes CEO", "status": "active", "risk": "medium"}]}',
+        encoding="utf-8",
+    )
+    (registry_dir / "workflows-registry.json").write_text(
+        '{"items": [{"id": "workflow-brain-intake-n8n", "name": "Brain Intake", "status": "dry_run_ready", "related_integration": "gateway-litellm-local"}]}',
+        encoding="utf-8",
+    )
+    (registry_dir / "runtime-integrations.json").write_text(
+        '{"items": [{"id": "gateway-litellm-local", "name": "LiteLLM", '
+        '"status": "needs_attention", "risk": "medium", '
+        '"metadata": {"base_url": "http://127.0.0.1:44000/v1"}}]}',
+        encoding="utf-8",
+    )
+    (tasks_dir / "task_1.json").write_text(
+        '{"id": "task_1", "title": "Review route", "status": "approval_required", '
+        '"required_approval": true, "risk": "high", "related_agent": "hermes-agent-ceo"}',
+        encoding="utf-8",
+    )
+    run_log = tmp_path / "memory" / "reports" / "nerd-os-runs.jsonl"
+    run_log.parent.mkdir(parents=True)
+    run_log.write_text(
+        '{"timestamp": "2026-05-25T01:00:00Z", "action_id": "stack_status", "exit_code": 0, "duration_ms": 10}\n',
+        encoding="utf-8",
+    )
+
+    mission = autonomous_mission_control_payload(tmp_path, registry=registry)
+
+    graph = mission["sections"]["operation_graph"]
+    assert isinstance(graph, dict)
+    node_ids = {node["id"] for node in graph["nodes"]}
+    edges = {(edge["from"], edge["to"], edge["kind"]) for edge in graph["edges"]}
+    assert {"stack_status", "task_1", "hermes-agent-ceo"} <= node_ids
+    assert ("hermes-agent-ceo", "task_1", "owns_task") in edges
+    assert mission["sections"]["attention_queue"]["summary"]["count"] >= 2
+    assert mission["sections"]["policy_matrix"]["summary"]["manual_gate_count"] >= 1
+    routes = mission["sections"]["domain_routes"]["items"]
+    assert any(route["url"] == "[internal backend]" for route in routes)
+    assert mission["sections"]["evidence_index"]["summary"]["source"] == (
+        "brain_github_observability_runs"
+    )
+
+
+def test_mission_control_redacts_sensitive_key_names_recursively(tmp_path):
+    actions_path = tmp_path / "actions.yaml"
+    write_actions(actions_path)
+    registry = ActionRegistry.load(actions_path)
+    registry_dir = tmp_path / "registry"
+    registry_dir.mkdir()
+    (registry_dir / "runtime-integrations.json").write_text(
+        '{"items": [{"id": "gateway-secret-test", "name": "Gateway", '
+        '"status": "configured", "metadata": {'
+        '"api_key": "sk-test-value", '
+        '"clientSecret": "client-secret-value", '
+        '"nested": {"password": "p4ssw0rd", "authorization": "Bearer token-value"}, '
+        '"base_url": "http://localhost:44000/v1"}}]}',
+        encoding="utf-8",
+    )
+
+    mission = autonomous_mission_control_payload(tmp_path, registry=registry)
+    serialized = str(mission)
+
+    assert mission["secret_status"]["status"] == "redaction_enabled"
+    assert "sk-test-value" not in serialized
+    assert "client-secret-value" not in serialized
+    assert "p4ssw0rd" not in serialized
+    assert "Bearer token-value" not in serialized
+    assert "localhost" not in serialized
+    assert serialized.count("<redacted>") >= 4
 
 
 def test_brainstorming_trackio_creates_ideas_and_promotes_task_candidates(tmp_path):
@@ -1066,6 +1221,74 @@ def test_create_autonomous_inbox_record_writes_inbox_and_task(tmp_path):
     assert autonomous_summary(tmp_path)["queues"]["inbox_count"] == 1
     assert autonomous_summary(tmp_path)["queues"]["task_count"] == 1
     assert autonomous_summary(tmp_path)["queues"]["artifact_count"] == 1
+
+
+def test_read_json_body_rejects_malformed_or_oversized_content_length():
+    malformed = Message()
+    malformed["Content-Length"] = "not-an-int"
+    with pytest.raises(ValueError, match="Content-Length must be an integer"):
+        _read_json_body(malformed, io.BytesIO(b"{}"))
+
+    oversized = Message()
+    oversized["Content-Length"] = str(MAX_JSON_BODY_BYTES + 1)
+    with pytest.raises(ValueError, match="JSON body exceeds"):
+        _read_json_body(oversized, io.BytesIO(b"{}"))
+
+    invalid_utf8 = Message()
+    invalid_utf8["Content-Length"] = "1"
+    with pytest.raises(ValueError, match="valid UTF-8"):
+        _read_json_body(invalid_utf8, io.BytesIO(b"\xff"))
+
+    not_object = Message()
+    not_object["Content-Length"] = "2"
+    with pytest.raises(ValueError, match="JSON object is required"):
+        _read_json_body(not_object, io.BytesIO(b"[]"))
+
+    valid = Message()
+    valid["Content-Length"] = "17"
+    assert _read_json_body(valid, io.BytesIO(b'{"reviewer":"op"}')) == {
+        "reviewer": "op"
+    }
+
+
+def test_autonomous_brain_payload_includes_graph_and_harness(tmp_path):
+    result = create_autonomous_brain_record(
+        {"text": "Graph contract should be available to brain UI.", "source": "operator"},
+        canonical_root=tmp_path,
+    )
+
+    payload = autonomous_brain_payload(tmp_path)
+    node_ids = {node["id"] for node in payload["graph"]["nodes"]}
+
+    assert payload["store"]["candidate_count"] == 1
+    assert payload["harness"]["candidate_count"] == 1
+    assert "brain-store-db" in node_ids
+    assert result["candidate"]["id"] in node_ids
+    assert payload["context_pack"]["recall"][0]["candidate_id"] == result["candidate"]["id"]
+    assert "Second Brain Context Pack" in payload["context_pack"]["markdown"]
+    assert payload["candidates"][0]["id"] == result["candidate"]["id"]
+    assert payload["sources"][0]["id"] == "source_operator"
+
+
+def test_promote_autonomous_brain_candidate_returns_refreshed_store_graph_and_harness(tmp_path):
+    result = create_autonomous_brain_record(
+        {"text": "Promote this candidate through the route helper.", "source": "operator"},
+        canonical_root=tmp_path,
+    )
+    candidate_id = result["candidate"]["id"]
+
+    promoted = promote_autonomous_brain_candidate(
+        candidate_id,
+        {"reviewer": "memory-curator"},
+        canonical_root=tmp_path,
+    )
+
+    node_ids = {node["id"] for node in promoted["graph"]["nodes"]}
+    assert promoted["promoted"]["artifact"]["promotion_status"] == "approved"
+    assert promoted["promoted"]["artifact"]["approved_by"] == "memory-curator"
+    assert promoted["store"]["approved_count"] == 1
+    assert promoted["harness"]["approved_count"] == 1
+    assert f"knowledge_{candidate_id}" in node_ids
 
 
 def test_create_autonomous_inbox_record_gates_high_risk_lab_requests(tmp_path):

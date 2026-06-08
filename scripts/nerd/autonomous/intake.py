@@ -17,6 +17,11 @@ from scripts.nerd.autonomous.models import (
     to_pretty_json,
     write_json,
 )
+from scripts.nerd.brain.store import (
+    brain_candidate_exists,
+    ingest_intake_artifact,
+    mark_candidate_promoted,
+)
 
 GITHUB_RE = re.compile(r"https://github\.com/[^/\s]+/[^/\s]+")
 URL_RE = re.compile(r"https?://[^\s]+")
@@ -373,6 +378,15 @@ def write_brain_intake(
             encoding="utf-8",
         )
         write_json(candidate_path, artifact.to_dict())
+        brain_store = ingest_intake_artifact(
+            item,
+            task,
+            artifact,
+            canonical_root=canonical_root,
+            candidate_markdown_path=candidate_markdown_path,
+        )
+    else:
+        brain_store = None
 
     return {
         "dry_run": dry_run,
@@ -385,6 +399,7 @@ def write_brain_intake(
             "candidate": candidate_path,
             "candidate_markdown": candidate_markdown_path,
         },
+        "brain_store": brain_store,
     }
 
 
@@ -411,6 +426,8 @@ def promote_memory_candidate(
         raise ValueError(f"invalid memory candidate: {candidate_id}")
     if artifact.get("promotion_status") != "candidate":
         raise ValueError(f"memory candidate is not promotable: {candidate_id}")
+    if not brain_candidate_exists(candidate_id, canonical_root):
+        raise ValueError(f"unknown memory candidate in brain store: {candidate_id}")
     markdown_path = Path(str(artifact.get("path") or ""))
     if not markdown_path.is_file():
         raise ValueError(f"candidate markdown is missing: {markdown_path}")
@@ -429,10 +446,18 @@ def promote_memory_candidate(
     artifact["approved_at"] = approved_at
     artifact["path"] = str(knowledge_path)
     write_json(candidate_path, artifact)
+    brain_store = mark_candidate_promoted(
+        candidate_id,
+        canonical_root=canonical_root,
+        reviewer=reviewer,
+        knowledge_path=knowledge_path,
+        approved_at=approved_at,
+    )
     return {
         "artifact": artifact,
         "candidate_path": candidate_path,
         "knowledge_path": knowledge_path,
+        "brain_store": brain_store,
     }
 
 

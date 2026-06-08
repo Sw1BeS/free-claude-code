@@ -12,11 +12,24 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import parse_qs, unquote, urlparse
 
 import yaml
 
-from scripts.nerd.autonomous.intake import iso_now, record_stamp, write_brain_intake
+from scripts.nerd.autonomous.intake import (
+    iso_now,
+    promote_memory_candidate,
+    record_stamp,
+    write_brain_intake,
+)
 from scripts.nerd.autonomous.models import ApprovalRecord, write_json
+from scripts.nerd.brain.store import (
+    brain_candidate_detail,
+    build_brain_context_pack,
+    build_brain_graph_snapshot,
+    build_brain_store_snapshot,
+    search_brain_store,
+)
 
 DEFAULT_ACTIONS_PATH = Path("/root/nerd-agency-stack/nerd-os.actions.yaml")
 DEFAULT_RUN_LOG_PATH = Path("/root/nerd-method/memory/reports/nerd-os-runs.jsonl")
@@ -25,6 +38,7 @@ DEFAULT_CANONICAL_ROOT = Path("/root/nerd-method")
 PUBLIC_BASE_URL = "https://agency.umanoff-analytics.space"
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_PORT = 38181
+MAX_JSON_BODY_BYTES = 1_048_576
 OS_NAV_ITEMS = (
     ("Mission Control", "mission_control"),
     ("Command Center", "command_center"),
@@ -92,6 +106,25 @@ LOCAL_ADDRESS_PATTERN = re.compile(
     r"http://(?:127\.0\.0\.1|localhost|172\.20\.\d+\.\d+)"
     r"(?::\d+)?(?:/[^\s\"'<>]*)?"
 )
+SENSITIVE_KEY_PARTS = (
+    "api_key",
+    "apikey",
+    "access_key",
+    "secret",
+    "password",
+    "passwd",
+    "token",
+    "credential",
+    "credentials",
+    "authorization",
+    "auth_header",
+    "bearer",
+    "cookie",
+    "session_id",
+    "private_key",
+    "client_secret",
+    "refresh_token",
+)
 REMOVED_PRODUCT_TERMS = ("paper" + "clip",)
 HIDDEN_CORE_UI_STATUSES = {
     "deprecated",
@@ -106,9 +139,11 @@ HIDDEN_CORE_UI_CLASSIFICATIONS = {
 DEFAULT_OS_CYCLE_ACTIONS = (
     "stack_status",
     "free_claude_status",
+    "local_ai_status",
+    "litellm_model_list",
     "hermes_status",
+    "moneygen_latest_report",
     "codegraph_status",
-    "git_guard_preflight",
 )
 
 
@@ -327,8 +362,22 @@ def _redact_local_addresses(value: object) -> object:
     if isinstance(value, list):
         return [_redact_local_addresses(item) for item in value]
     if isinstance(value, dict):
-        return {key: _redact_local_addresses(item) for key, item in value.items()}
+        return {
+            key: (
+                "<redacted>"
+                if _is_sensitive_key(key)
+                else _redact_local_addresses(item)
+            )
+            for key, item in value.items()
+        }
     return value
+
+
+def _is_sensitive_key(key: object) -> bool:
+    normalized = re.sub(r"[^a-z0-9]+", "_", str(key).strip().lower()).strip("_")
+    if normalized in {"auth_state", "secret_status", "sensitive_key_redaction"}:
+        return False
+    return any(part in normalized for part in SENSITIVE_KEY_PARTS)
 
 
 def _record_json_blob(record: dict[str, object]) -> str:
@@ -403,7 +452,7 @@ def _safe_read_json(path: Path, default: object) -> object:
         return default
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError, OSError:
+    except (json.JSONDecodeError, OSError):
         return default
 
 
@@ -460,7 +509,7 @@ def _run_record_status(run: dict[str, object]) -> str:
         return "timed_out"
     try:
         exit_code = int(run.get("exit_code", 1))
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         exit_code = 1
     return "success" if exit_code == 0 else "failed"
 
@@ -708,6 +757,7 @@ def autonomous_summary(
     )
     github_radar = _items_from_record_file(registry_dir / "github-radar.json")
     observability = _items_from_record_file(registry_dir / "observability-events.json")
+    brain_store = build_brain_store_snapshot(canonical_root)
     departments = _items_from_record_file(registry_dir / "departments.json")
     models = _items_from_record_file(registry_dir / "models.json")
     inbox_items = _records_from_dir(memory_dir / "inbox")
@@ -732,6 +782,9 @@ def autonomous_summary(
             "observability_count": len(observability),
             "department_count": len(departments),
             "model_count": len(models),
+            "brain_store_source_count": brain_store.get("source_count", 0),
+            "brain_store_episode_count": brain_store.get("episode_count", 0),
+            "brain_store_candidate_count": brain_store.get("candidate_count", 0),
         },
         "queues": {
             "inbox_count": len(inbox_items),
@@ -815,9 +868,29 @@ def autonomous_brain_payload(
     canonical_root: Path = DEFAULT_CANONICAL_ROOT,
 ) -> dict[str, object]:
     registry_dir = canonical_root / "registry"
+    store = build_brain_store_snapshot(canonical_root)
+    graph = build_brain_graph_snapshot(canonical_root)
     return {
         "summary": autonomous_summary(canonical_root),
         "items": _items_from_record_file(registry_dir / "brain-memory.json"),
+        "store": store,
+        "graph": graph,
+        "harness": graph.get("harness", {}),
+        "context_pack": build_brain_context_pack("", canonical_root, limit=6),
+        "candidates": store.get("recent_candidates", []),
+        "sources": store.get("sources", []),
+    }
+
+
+def autonomous_brain_store_payload(
+    canonical_root: Path = DEFAULT_CANONICAL_ROOT,
+) -> dict[str, object]:
+    graph = build_brain_graph_snapshot(canonical_root)
+    return {
+        "summary": autonomous_summary(canonical_root),
+        "store": build_brain_store_snapshot(canonical_root),
+        "graph": graph,
+        "harness": graph.get("harness", {}),
     }
 
 
@@ -1214,12 +1287,359 @@ def run_operating_cycle(
     }
 
 
+def _record_status(record: dict[str, object], default: str = "unknown") -> str:
+    return str(record.get("status") or record.get("execution_policy") or default)
+
+
+def _record_risk(record: dict[str, object], default: str = "unknown") -> str:
+    return str(record.get("risk") or record.get("risk_level") or default)
+
+
+def _record_name(record: dict[str, object]) -> str:
+    record_id = str(record.get("id") or "record")
+    return str(record.get("name") or record.get("title") or record_id)
+
+
+def _mission_node(
+    record: dict[str, object],
+    *,
+    kind: str,
+    source: str,
+) -> dict[str, object]:
+    record_id = str(record.get("id") or record.get("action_id") or f"{kind}_record")
+    return {
+        "id": record_id,
+        "kind": kind,
+        "source": source,
+        "name": _record_name(record),
+        "status": _record_status(record),
+        "risk": _record_risk(record),
+        "surface": str(record.get("surface") or record.get("department") or ""),
+    }
+
+
+def _operation_graph_payload(
+    *,
+    action_console: list[dict[str, object]],
+    run_timeline: list[dict[str, object]],
+    tasks: list[dict[str, object]],
+    agents: list[dict[str, object]],
+    workflows: list[dict[str, object]],
+    integrations: list[dict[str, object]],
+) -> dict[str, object]:
+    nodes: list[dict[str, object]] = []
+    for source, kind, records in [
+        ("action_console", "action", action_console),
+        ("run_timeline", "run", run_timeline),
+        ("tasks", "task", tasks),
+        ("agents", "agent", agents),
+        ("workflows", "workflow", workflows),
+        ("integrations", "integration", integrations),
+    ]:
+        nodes.extend(
+            _mission_node(record, kind=kind, source=source)
+            for record in records[:40]
+            if isinstance(record, dict)
+        )
+
+    node_ids = {str(node["id"]) for node in nodes}
+    edges: list[dict[str, object]] = []
+    for run in run_timeline[:60]:
+        action_id = str(run.get("action_id") or "")
+        run_id = str(run.get("id") or "")
+        if action_id in node_ids and run_id in node_ids:
+            edges.append({"from": action_id, "to": run_id, "kind": "produced_run"})
+    for task in tasks[:60]:
+        task_id = str(task.get("id") or "")
+        agent_id = str(task.get("related_agent") or task.get("agent_id") or "")
+        if agent_id in node_ids and task_id in node_ids:
+            edges.append({"from": agent_id, "to": task_id, "kind": "owns_task"})
+        workflow_id = str(task.get("workflow_id") or task.get("related_workflow") or "")
+        if workflow_id in node_ids and task_id in node_ids:
+            edges.append({"from": workflow_id, "to": task_id, "kind": "routes_task"})
+    for workflow in workflows[:60]:
+        workflow_id = str(workflow.get("id") or "")
+        integration_id = str(
+            workflow.get("integration_id")
+            or workflow.get("runtime_id")
+            or workflow.get("related_integration")
+            or ""
+        )
+        if workflow_id in node_ids and integration_id in node_ids:
+            edges.append(
+                {"from": workflow_id, "to": integration_id, "kind": "uses_integration"}
+            )
+
+    return {
+        "summary": {
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "source": "registry_run_brain_action_data",
+        },
+        "nodes": nodes,
+        "edges": edges,
+    }
+
+
+def _attention_queue_payload(
+    *,
+    warnings: list[dict[str, object]],
+    system_health: list[dict[str, object]],
+    tasks: list[dict[str, object]],
+    approvals: list[dict[str, object]],
+    action_requests: list[dict[str, object]],
+    run_timeline: list[dict[str, object]],
+) -> dict[str, object]:
+    candidates = (
+        list(warnings)
+        + list(system_health)
+        + list(approvals)
+        + list(action_requests)
+        + [
+            task
+            for task in tasks
+            if _status_needs_attention(task.get("status"))
+            or task.get("required_approval") is True
+        ]
+        + [
+            run
+            for run in run_timeline
+            if _status_needs_attention(run.get("status"))
+        ]
+    )
+    severity_order = {"high": 0, "critical": 0, "medium": 1, "low": 2}
+    deduped: dict[str, dict[str, object]] = {}
+    for record in candidates:
+        record_id = str(record.get("id") or record.get("action_id") or _record_name(record))
+        deduped[record_id] = {
+            "id": record_id,
+            "name": _record_name(record),
+            "status": _record_status(record),
+            "risk": _record_risk(record),
+            "source": str(record.get("source") or record.get("kind") or "mission_control"),
+            "next_action": str(
+                record.get("next_action")
+                or record.get("notes")
+                or record.get("reason")
+                or "Review in Mission Control."
+            ),
+        }
+    items = sorted(
+        deduped.values(),
+        key=lambda item: (
+            severity_order.get(str(item.get("risk")).lower(), 3),
+            str(item.get("id")),
+        ),
+    )
+    return {
+        "summary": {"count": len(items), "source": "warnings_queues_and_runs"},
+        "items": items,
+    }
+
+
+def _evidence_index_payload(
+    *,
+    brain_store: object,
+    brain_graph: object,
+    github_radar: list[dict[str, object]],
+    observability: list[dict[str, object]],
+    run_timeline: list[dict[str, object]],
+) -> dict[str, object]:
+    store = brain_store if isinstance(brain_store, dict) else {}
+    graph = brain_graph if isinstance(brain_graph, dict) else {}
+    items: list[dict[str, object]] = []
+    for source in _safe_record_array(store.get("sources"))[:30]:
+        items.append(
+            {
+                "id": str(source.get("id") or _record_name(source)),
+                "kind": "brain_source",
+                "title": _record_name(source),
+                "status": _record_status(source, "indexed"),
+                "source": "brain_store",
+            }
+        )
+    for candidate in _safe_record_array(store.get("recent_candidates"))[:30]:
+        items.append(
+            {
+                "id": str(candidate.get("id") or candidate.get("candidate_id") or _record_name(candidate)),
+                "kind": "brain_candidate",
+                "title": _record_name(candidate),
+                "status": _record_status(candidate),
+                "source": "brain_store",
+            }
+        )
+    for source_name, kind, records in [
+        ("github_radar", "repo_signal", github_radar),
+        ("observability", "observability_event", observability),
+        ("run_timeline", "run_record", run_timeline),
+    ]:
+        for record in records[:30]:
+            items.append(
+                {
+                    "id": str(record.get("id") or record.get("action_id") or _record_name(record)),
+                    "kind": kind,
+                    "title": _record_name(record),
+                    "status": _record_status(record),
+                    "source": source_name,
+                }
+            )
+    return {
+        "summary": {
+            "count": len(items),
+            "graph_status": graph.get("status", "unknown"),
+            "source": "brain_github_observability_runs",
+        },
+        "items": items,
+    }
+
+
+def _domain_routes_payload(
+    *,
+    integrations: list[dict[str, object]],
+) -> dict[str, object]:
+    public_routes = [
+        {
+            "id": _safe_identifier_part(link["label"]).lower(),
+            "label": link["label"],
+            "url": link["url"],
+            "description": link["description"],
+            "kind": "public_service",
+            "status": "published",
+        }
+        for link in public_service_links()
+    ]
+    nav_routes = [
+        {
+            "id": surface,
+            "label": label,
+            "url": f"{PUBLIC_BASE_URL}/nerd-os/{_surface_route(surface).strip('./')}",
+            "kind": "nerd_os_surface",
+            "status": "published",
+        }
+        for label, surface in OS_NAV_ITEMS
+        if _surface_route(surface) != "."
+    ]
+    integration_routes = []
+    for integration in integrations:
+        metadata = integration.get("metadata")
+        metadata = metadata if isinstance(metadata, dict) else {}
+        url = integration.get("url") or metadata.get("url") or metadata.get("base_url")
+        if url:
+            integration_routes.append(
+                {
+                    "id": str(integration.get("id") or _record_name(integration)),
+                    "label": _record_name(integration),
+                    "url": str(url),
+                    "kind": "integration_endpoint",
+                    "status": _record_status(integration),
+                }
+            )
+    routes = public_routes + nav_routes + integration_routes
+    return {
+        "summary": {"count": len(routes), "source": "public_routes_nav_integrations"},
+        "items": routes,
+    }
+
+
+def _policy_matrix_payload(
+    *,
+    action_console: list[dict[str, object]],
+    tasks: list[dict[str, object]],
+    approvals: list[dict[str, object]],
+    updates: list[dict[str, object]],
+    integrations: list[dict[str, object]],
+) -> dict[str, object]:
+    items: list[dict[str, object]] = []
+    for action in action_console:
+        items.append(
+            {
+                "id": str(action.get("id") or "action"),
+                "kind": "action",
+                "policy": str(action.get("execution_policy") or "disabled"),
+                "risk": _record_risk(action),
+                "status": _record_status(action),
+                "execution_allowed": action.get("execution_policy") == "allowed",
+            }
+        )
+    for task in tasks:
+        items.append(
+            {
+                "id": str(task.get("id") or "task"),
+                "kind": "task",
+                "policy": "approval_required"
+                if task.get("required_approval") is True
+                else "standard_queue",
+                "risk": _record_risk(task),
+                "status": _record_status(task),
+                "execution_allowed": task.get("execution_allowed") is True,
+            }
+        )
+    for source, kind, records in [
+        ("approvals", "approval", approvals),
+        ("updates", "update", updates),
+        ("integrations", "integration", integrations),
+    ]:
+        for record in records:
+            items.append(
+                {
+                    "id": str(record.get("id") or _record_name(record)),
+                    "kind": kind,
+                    "policy": str(
+                        record.get("policy")
+                        or record.get("approval_mode")
+                        or record.get("auto_mode")
+                        or source
+                    ),
+                    "risk": _record_risk(record),
+                    "status": _record_status(record),
+                    "execution_allowed": record.get("execution_allowed") is True,
+                }
+            )
+    return {
+        "summary": {
+            "count": len(items),
+            "manual_gate_count": len(
+                [
+                    item
+                    for item in items
+                    if item["execution_allowed"] is not True
+                    and str(item["risk"]).lower() in {"high", "critical"}
+                ]
+            ),
+            "source": "actions_tasks_approvals_updates_integrations",
+        },
+        "items": items,
+    }
+
+
+def _auth_state_payload() -> dict[str, object]:
+    return {
+        "status": "externalized",
+        "mode": "upstream_gateway",
+        "principal": "not_available_to_bff",
+        "notes": "Mission Control BFF does not receive request identity in this runner.",
+    }
+
+
+def _secret_status_payload() -> dict[str, object]:
+    return {
+        "status": "redaction_enabled",
+        "sensitive_key_redaction": True,
+        "local_backend_redaction": True,
+        "redacted_value": "<redacted>",
+    }
+
+
 def autonomous_mission_control_payload(
     canonical_root: Path = DEFAULT_CANONICAL_ROOT,
     registry: ActionRegistry | None = None,
 ) -> dict[str, object]:
     summary = autonomous_summary(canonical_root)
-    brain = autonomous_brain_payload(canonical_root)["items"]
+    brain_payload = autonomous_brain_payload(canonical_root)
+    brain = brain_payload["items"]
+    brain_store = brain_payload["store"]
+    brain_graph = brain_payload["graph"]
+    brain_harness = brain_payload["harness"]
     agents = autonomous_hermes_payload(canonical_root)["items"]
     updates = autonomous_updates_payload(canonical_root)["items"]
     integrations = autonomous_integrations_payload(canonical_root)["items"]
@@ -1247,8 +1667,42 @@ def autonomous_mission_control_payload(
         if isinstance(item, dict)
         and str(item.get("status")) in {"blocked", "needs_attention", "failed"}
     ]
-    return {
+    operation_graph = _operation_graph_payload(
+        action_console=_safe_record_array(action_console),
+        run_timeline=_safe_record_array(run_timeline),
+        tasks=_safe_record_array(tasks),
+        agents=_safe_record_array(agents),
+        workflows=_safe_record_array(workflows),
+        integrations=_safe_record_array(integrations),
+    )
+    attention_queue = _attention_queue_payload(
+        warnings=_safe_record_array(warnings),
+        system_health=_safe_record_array(system_health),
+        tasks=_safe_record_array(tasks),
+        approvals=_safe_record_array(approvals),
+        action_requests=_safe_record_array(action_requests),
+        run_timeline=_safe_record_array(run_timeline),
+    )
+    evidence_index = _evidence_index_payload(
+        brain_store=brain_store,
+        brain_graph=brain_graph,
+        github_radar=_safe_record_array(github_radar),
+        observability=_safe_record_array(observability),
+        run_timeline=_safe_record_array(run_timeline),
+    )
+    domain_routes = _domain_routes_payload(integrations=_safe_record_array(integrations))
+    policy_matrix = _policy_matrix_payload(
+        action_console=_safe_record_array(action_console),
+        tasks=_safe_record_array(tasks),
+        approvals=_safe_record_array(approvals),
+        updates=_safe_record_array(updates),
+        integrations=_safe_record_array(integrations),
+    )
+    payload: dict[str, object] = {
+        "schema_version": "mission_control.v2",
         "product": "NERD OS Mission Control",
+        "auth_state": _auth_state_payload(),
+        "secret_status": _secret_status_payload(),
         "summary": _surface_summary(summary),
         "overview": {
             "system_status": "operational" if not warnings else "attention_required",
@@ -1256,6 +1710,10 @@ def autonomous_mission_control_payload(
             "inbox_count": queues.get("inbox_count", 0),
             "task_count": queues.get("task_count", 0),
             "memory_items": registry_counts.get("brain_count", 0),
+            "brain_store_episodes": registry_counts.get("brain_store_episode_count", 0),
+            "brain_store_candidates": registry_counts.get(
+                "brain_store_candidate_count", 0
+            ),
             "update_candidates": registry_counts.get("update_candidate_count", 0),
             "runtime_integrations": registry_counts.get("runtime_count", 0),
             "warnings": len(warnings),
@@ -1275,6 +1733,9 @@ def autonomous_mission_control_payload(
             "action_requests": action_requests,
             "agents": agents,
             "brain": brain,
+            "brain_store": brain_store,
+            "brain_graph": brain_graph,
+            "brain_harness": brain_harness,
             "updates": updates,
             "integrations": integrations,
             "skills": skills,
@@ -1283,9 +1744,15 @@ def autonomous_mission_control_payload(
             "observability": observability,
             "system_health": system_health,
             "brainstorming_trackio": trackio,
+            "operation_graph": operation_graph,
+            "attention_queue": attention_queue,
+            "evidence_index": evidence_index,
+            "domain_routes": domain_routes,
+            "policy_matrix": policy_matrix,
             "warnings": warnings,
         },
     }
+    return cast("dict[str, object]", _redact_local_addresses(payload))
 
 
 def autonomous_api_payload(
@@ -1293,7 +1760,10 @@ def autonomous_api_payload(
     canonical_root: Path = DEFAULT_CANONICAL_ROOT,
     registry: ActionRegistry | None = None,
 ) -> dict[str, object] | None:
-    path = _request_path(path)
+    parsed = urlparse(path)
+    request_path = _request_path(path)
+    query_params = parse_qs(parsed.query)
+    path = request_path
     if path == "/api/mission-control":
         return autonomous_mission_control_payload(canonical_root, registry=registry)
     if path == "/api/autonomous/registry":
@@ -1313,6 +1783,29 @@ def autonomous_api_payload(
         return autonomous_approval_payload(canonical_root)
     if path == "/api/autonomous/brain":
         return autonomous_brain_payload(canonical_root)
+    if path == "/api/autonomous/brain-store":
+        return autonomous_brain_store_payload(canonical_root)
+    if path == "/api/autonomous/brain/context":
+        query = (query_params.get("q") or query_params.get("query") or [""])[0]
+        raw_limit = (query_params.get("limit") or ["8"])[0]
+        try:
+            limit = int(raw_limit)
+        except ValueError:
+            limit = 8
+        return build_brain_context_pack(query, canonical_root, limit=limit)
+    if path == "/api/autonomous/brain/search":
+        query = (query_params.get("q") or query_params.get("query") or [""])[0]
+        raw_limit = (query_params.get("limit") or ["8"])[0]
+        try:
+            limit = int(raw_limit)
+        except ValueError:
+            limit = 8
+        return search_brain_store(query, canonical_root, limit=limit)
+    if path.startswith("/api/autonomous/brain/candidates/"):
+        candidate_id = unquote(path.removeprefix("/api/autonomous/brain/candidates/"))
+        if not candidate_id or "/" in candidate_id:
+            return None
+        return brain_candidate_detail(candidate_id, canonical_root)
     if path == "/api/autonomous/hermes":
         return autonomous_hermes_payload(canonical_root)
     if path == "/api/autonomous/hermes-repair":
@@ -1478,6 +1971,49 @@ def create_autonomous_inbox_record(
             "candidate": str(paths["candidate"]),
             "candidate_markdown": str(paths["candidate_markdown"]),
         },
+        "summary": autonomous_summary(canonical_root),
+    }
+
+
+def create_autonomous_brain_record(
+    payload: dict[str, object],
+    *,
+    canonical_root: Path = DEFAULT_CANONICAL_ROOT,
+) -> dict[str, object]:
+    brain_payload = dict(payload)
+    brain_payload.setdefault("source", "brain")
+    result = create_autonomous_inbox_record(
+        brain_payload,
+        canonical_root=canonical_root,
+    )
+    result["brain_store"] = build_brain_store_snapshot(canonical_root)
+    return result
+
+
+def promote_autonomous_brain_candidate(
+    candidate_id: str,
+    payload: dict[str, object] | None = None,
+    *,
+    canonical_root: Path = DEFAULT_CANONICAL_ROOT,
+) -> dict[str, object]:
+    payload = payload or {}
+    reviewer = str(payload.get("reviewer") or "operator").strip() or "operator"
+    promoted = promote_memory_candidate(
+        candidate_id,
+        canonical_root=canonical_root,
+        reviewer=reviewer,
+    )
+    graph = build_brain_graph_snapshot(canonical_root)
+    return {
+        "promoted": {
+            "artifact": promoted["artifact"],
+            "candidate_path": str(promoted["candidate_path"]),
+            "knowledge_path": str(promoted["knowledge_path"]),
+            "brain_store": promoted["brain_store"],
+        },
+        "store": build_brain_store_snapshot(canonical_root),
+        "graph": graph,
+        "harness": graph.get("harness", {}),
         "summary": autonomous_summary(canonical_root),
     }
 
@@ -2424,6 +2960,516 @@ def render_mission_control_html(
           card.hidden = hidden;
         }});
       }});
+    }});
+  </script>
+</body>
+</html>
+"""
+
+
+def _brain_metric_card(label: str, value: object, detail: str) -> str:
+    return f"""
+      <article class="brain-metric">
+        <span>{html.escape(label)}</span>
+        <strong>{html.escape(str(value))}</strong>
+        <p>{html.escape(detail)}</p>
+      </article>
+    """
+
+
+def _brain_source_cards(records: list[dict[str, object]]) -> str:
+    if not records:
+        return '<div class="empty">No DB sources have been ingested yet</div>'
+    cards = []
+    for record in records[:8]:
+        record_id = _record_text(record, "id", default="source")
+        name = _record_text(record, "name", default=record_id)
+        kind = _record_text(record, "kind", default="source")
+        status = _record_text(record, "status", default="active")
+        updated = _record_text(record, "updated_at", default="")
+        cards.append(
+            f"""
+            <article class="brain-source">
+              <span class="pulse" aria-hidden="true"></span>
+              <div>
+                <code>{html.escape(record_id)}</code>
+                <h3>{html.escape(name)}</h3>
+                <p>{html.escape(kind)}{html.escape(f" · {updated}" if updated else "")}</p>
+              </div>
+              <span class="state state-{html.escape(_mission_status_class(status))}">{html.escape(status)}</span>
+            </article>
+            """
+        )
+    return "".join(cards)
+
+
+def _brain_candidate_cards(records: list[dict[str, object]]) -> str:
+    if not records:
+        return '<div class="empty">No memory candidates have been written into the DB yet</div>'
+    cards = []
+    for record in records[:8]:
+        record_id = _record_text(record, "id", default="candidate")
+        name = _record_text(record, "name", "title", default=record_id)
+        status = _record_text(record, "promotion_status", "status", default="candidate")
+        risk = _record_text(record, "risk", default="unknown")
+        summary = _record_text(record, "summary", default="Awaiting summary")
+        task_id = _record_text(record, "task_id", default="")
+        cards.append(
+            f"""
+            <article class="brain-candidate">
+              <div class="candidate-head">
+                <div>
+                  <code>{html.escape(record_id)}</code>
+                  <h3>{html.escape(name)}</h3>
+                </div>
+                <span class="state state-{html.escape(_mission_status_class(status))}">{html.escape(status)}</span>
+              </div>
+              <p>{html.escape(summary)}</p>
+              <small>{html.escape(" / ".join(value for value in (risk, task_id) if value))}</small>
+            </article>
+            """
+        )
+    return "".join(cards)
+
+
+def render_brain_html(
+    registry: ActionRegistry,
+    *,
+    canonical_root: Path = DEFAULT_CANONICAL_ROOT,
+) -> str:
+    payload = autonomous_brain_payload(canonical_root)
+    summary = payload["summary"] if isinstance(payload.get("summary"), dict) else {}
+    store = payload["store"] if isinstance(payload.get("store"), dict) else {}
+    records = _active_product_records(
+        _mission_primary_records(
+            payload["items"] if isinstance(payload.get("items"), list) else []
+        )
+    )
+    candidates = _safe_record_array(store.get("recent_candidates"))
+    sources = _safe_record_array(store.get("sources"))
+    actions = _action_records_for_surface(registry, "brain")
+    summary_json = html.escape(
+        json.dumps(
+            _redact_local_addresses(_surface_summary(summary)),
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
+    action_cards = _mission_card_grid(
+        actions,
+        empty="No brain actions are registered",
+        detail_keys=("group", "execution_policy", "timeout_seconds"),
+        limit=8,
+    )
+    record_cards = _mission_card_grid(
+        records,
+        empty="Brain registry is empty",
+        detail_keys=("classification", "kind", "metadata"),
+        limit=10,
+    )
+    metrics = "".join(
+        [
+            _brain_metric_card(
+                "Store",
+                store.get("status", "missing"),
+                str(store.get("db_path") or "No DB path recorded"),
+            ),
+            _brain_metric_card(
+                "Sources",
+                store.get("source_count", 0),
+                "Connected intake origins and agent surfaces.",
+            ),
+            _brain_metric_card(
+                "Episodes",
+                store.get("episode_count", 0),
+                "Normalized context units available for retrieval.",
+            ),
+            _brain_metric_card(
+                "Candidates",
+                store.get("candidate_count", 0),
+                "Promotable memory records awaiting review.",
+            ),
+            _brain_metric_card(
+                "Approved",
+                store.get("approved_count", 0),
+                "Candidates promoted into durable knowledge.",
+            ),
+        ]
+    )
+    return f"""<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Autonomous Brain</title>
+  <style>
+    :root {{
+      color-scheme: dark;
+      --bg: #070807;
+      --panel: #101512;
+      --panel-2: #151b18;
+      --line: #2b3932;
+      --line-strong: #415248;
+      --text: #f2f5f2;
+      --muted: #9aa99f;
+      --ok: #4ed18c;
+      --warn: #f3bb4b;
+      --bad: #ef626c;
+      --cyan: #55d6c2;
+      --blue: #72a8ff;
+    }}
+    * {{ box-sizing: border-box; }}
+    body {{
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Aptos, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+    h1, h2, h3, p {{ margin: 0; letter-spacing: 0; }}
+    p {{ color: var(--muted); font-size: 13px; line-height: 1.45; }}
+    code {{ color: var(--blue); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; overflow-wrap: anywhere; }}
+    small {{ color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }}
+    .brain-shell {{
+      display: grid;
+      grid-template-columns: 260px minmax(0, 1fr);
+      min-height: 100vh;
+    }}
+    .rail {{
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow: auto;
+      border-right: 1px solid var(--line);
+      background: #0b0f0d;
+      padding: 18px 14px;
+    }}
+    .brand {{ display: grid; gap: 4px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }}
+    .brand strong {{ font-size: 18px; }}
+    .brand span {{ color: var(--muted); font-size: 12px; }}
+    nav {{ display: grid; gap: 7px; }}
+    nav a, .top-actions a {{
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      color: var(--text);
+      padding: 0 10px;
+      text-decoration: none;
+      font-size: 13px;
+    }}
+    nav a[aria-current="page"] {{ border-color: var(--line-strong); box-shadow: inset 3px 0 0 var(--cyan); }}
+    main {{ min-width: 0; padding: 20px; }}
+    .topbar {{
+      min-height: 64px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+    }}
+    h1 {{ font-size: 25px; line-height: 1.12; }}
+    h2 {{ font-size: 15px; line-height: 1.25; margin-bottom: 10px; }}
+    h3 {{ font-size: 13px; line-height: 1.25; }}
+    .top-actions {{ display: flex; gap: 8px; flex-wrap: wrap; justify-content: end; }}
+    .metrics {{
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 14px;
+    }}
+    .brain-metric, .panel, .brain-source, .brain-candidate {{
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }}
+    .brain-metric {{
+      min-height: 104px;
+      display: grid;
+      align-content: space-between;
+      gap: 8px;
+      padding: 12px;
+    }}
+    .brain-metric span {{ color: var(--muted); font-size: 12px; }}
+    .brain-metric strong {{ font-size: 22px; overflow-wrap: anywhere; }}
+    .workspace {{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: 12px;
+      align-items: start;
+    }}
+    .stack {{ display: grid; gap: 12px; }}
+    .panel {{ padding: 14px; min-width: 0; }}
+    .brain-flow {{
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }}
+    .flow-node {{
+      position: relative;
+      min-height: 112px;
+      display: grid;
+      align-content: start;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      padding: 12px;
+    }}
+    .flow-node span {{
+      width: 30px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(85, 214, 194, .45);
+      border-radius: 7px;
+      color: var(--cyan);
+      font-size: 11px;
+      font-weight: 700;
+    }}
+    .flow-node:not(:last-child)::after {{
+      content: "";
+      position: absolute;
+      top: 26px;
+      right: -10px;
+      width: 10px;
+      height: 1px;
+      background: var(--line-strong);
+    }}
+    .brain-intake {{
+      display: grid;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+    }}
+    .brain-intake textarea, .brain-intake input {{
+      width: 100%;
+      min-width: 0;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #070a09;
+      color: var(--text);
+      padding: 9px 10px;
+      font: inherit;
+    }}
+    .brain-intake textarea {{ min-height: 110px; resize: vertical; }}
+    .form-row {{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }}
+    button {{
+      min-height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel-2);
+      color: var(--text);
+      font-weight: 700;
+      cursor: pointer;
+      padding: 0 12px;
+    }}
+    button:disabled {{ opacity: .6; cursor: not-allowed; }}
+    .source-list, .candidate-list, .cards {{ display: grid; gap: 10px; }}
+    .brain-source {{
+      min-height: 76px;
+      display: grid;
+      grid-template-columns: 12px minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+      padding: 10px;
+    }}
+    .pulse {{
+      width: 10px;
+      height: 10px;
+      margin-top: 6px;
+      border-radius: 50%;
+      background: var(--ok);
+      box-shadow: 0 0 0 4px rgba(78, 209, 140, .08);
+    }}
+    .brain-candidate {{
+      min-height: 134px;
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+      padding: 12px;
+    }}
+    .candidate-head, .mc-card-head {{
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: start;
+    }}
+    .state {{
+      min-height: 24px;
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 0 7px;
+      font-size: 11px;
+      white-space: nowrap;
+    }}
+    .state-ok {{ color: var(--ok); border-color: rgba(78, 209, 140, .45); }}
+    .state-warn {{ color: var(--warn); border-color: rgba(243, 187, 75, .45); }}
+    .state-muted {{ color: var(--muted); }}
+    .state-info {{ color: var(--cyan); border-color: rgba(85, 214, 194, .35); }}
+    .mc-card {{
+      min-height: 126px;
+      display: grid;
+      align-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      padding: 12px;
+    }}
+    .empty {{
+      min-height: 86px;
+      display: grid;
+      place-items: center;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      padding: 14px;
+      text-align: center;
+    }}
+    pre {{
+      max-height: 360px;
+      overflow: auto;
+      margin: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #05070a;
+      color: var(--muted);
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }}
+    @media (max-width: 1180px) {{
+      .workspace {{ grid-template-columns: 1fr; }}
+      .metrics {{ grid-template-columns: repeat(3, minmax(0, 1fr)); }}
+    }}
+    @media (max-width: 920px) {{
+      .brain-shell {{ grid-template-columns: 1fr; }}
+      .rail {{ position: static; height: auto; }}
+      nav {{ grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }}
+      .brain-flow {{ grid-template-columns: 1fr; }}
+      .flow-node::after {{ display: none; }}
+    }}
+    @media (max-width: 680px) {{
+      main {{ padding: 14px; }}
+      .topbar, .form-row {{ grid-template-columns: 1fr; }}
+      .top-actions {{ justify-content: start; }}
+      .metrics {{ grid-template-columns: 1fr; }}
+    }}
+  </style>
+</head>
+<body>
+  <div class="brain-shell">
+    <aside class="rail">
+      <div class="brand">
+        <strong>NERD OS</strong>
+        <span>Second Brain</span>
+      </div>
+      <nav aria-label="Brain navigation">
+        <a href="mission-control">Mission Control</a>
+        <a href="brain" aria-current="page">Brain</a>
+        <a href="inbox">Inbox</a>
+        <a href="tasks">Tasks</a>
+        <a href="approvals">Approvals</a>
+        <a href="registry">Registry</a>
+        <a href="runtimes">Runtimes</a>
+      </nav>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div>
+          <p>Autonomous Brain</p>
+          <h1>NERD OS Second Brain</h1>
+        </div>
+        <div class="top-actions">
+          <a href="mission-control">Mission Control</a>
+          <a href="/api/autonomous/brain">API</a>
+          <a href="/api/autonomous/brain-store">Store</a>
+        </div>
+      </header>
+      <section class="metrics">{metrics}</section>
+      <section class="workspace">
+        <div class="stack">
+          <section class="panel">
+            <h2>Context Flow</h2>
+            <div class="brain-flow" aria-label="Second brain context flow">
+              <article class="flow-node"><span>01</span><h3>Capture</h3><p>Operator, Telegram, n8n, files, repos, and agent notes.</p></article>
+              <article class="flow-node"><span>02</span><h3>Normalize</h3><p>Risk, privacy, source, task route, and candidate summary.</p></article>
+              <article class="flow-node"><span>03</span><h3>Store</h3><p>SQLite-backed canonical DB with JSON registry mirrors.</p></article>
+              <article class="flow-node"><span>04</span><h3>Retrieve</h3><p>FTS-ready records for agents, UI, and future MCP access.</p></article>
+              <article class="flow-node"><span>05</span><h3>Context Pack</h3><p>Promoted knowledge feeds every AI layer without losing state.</p></article>
+            </div>
+          </section>
+          <section class="panel">
+            <h2>Brain Intake</h2>
+            <form id="brainIntakeForm" class="brain-intake">
+              <textarea id="brainText" name="text" placeholder="Capture a memory, decision, repo signal, architecture note, research lead, or operating context."></textarea>
+              <div class="form-row">
+                <input id="brainSource" name="source" value="brain" aria-label="Brain intake source">
+                <button type="submit">Capture Memory</button>
+              </div>
+              <pre id="brainIntakeResult" aria-live="polite">Ready. Records write to /api/autonomous/brain and mirror into the brain store.</pre>
+            </form>
+          </section>
+          <section class="panel">
+            <h2>Recent Candidates</h2>
+            <div class="candidate-list">{_brain_candidate_cards(candidates)}</div>
+          </section>
+          <section class="panel">
+            <h2>Canonical Memory Records</h2>
+            <div class="cards">{record_cards}</div>
+          </section>
+        </div>
+        <aside class="stack">
+          <section class="panel">
+            <h2>Sources</h2>
+            <div class="source-list">{_brain_source_cards(sources)}</div>
+          </section>
+          <section class="panel">
+            <h2>Brain Actions</h2>
+            <div class="cards">{action_cards}</div>
+          </section>
+          <section class="panel">
+            <h2>Registry Mirror</h2>
+            <pre>{summary_json}</pre>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </div>
+  <script>
+    const form = document.getElementById('brainIntakeForm');
+    const result = document.getElementById('brainIntakeResult');
+    const basePath = location.pathname.startsWith('/nerd-os') ? '/nerd-os' : '';
+    form?.addEventListener('submit', async event => {{
+      event.preventDefault();
+      const text = document.getElementById('brainText').value.trim();
+      const source = document.getElementById('brainSource').value.trim() || 'brain';
+      if (!text) {{
+        result.textContent = 'Memory text is required.';
+        return;
+      }}
+      result.textContent = 'Capturing memory...';
+      try {{
+        const response = await fetch(`${{basePath}}/api/autonomous/brain`, {{
+          method: 'POST',
+          headers: {{'Content-Type': 'application/json'}},
+          body: JSON.stringify({{text, source}})
+        }});
+        const data = await response.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      }} catch (error) {{
+        result.textContent = String(error);
+      }}
     }});
   </script>
 </body>
@@ -4017,6 +5063,27 @@ def _request_path(path: str) -> str:
     return clean
 
 
+def _read_json_body(headers: Any, body_stream: Any) -> dict[str, object]:
+    raw_length = str(headers.get("Content-Length", "0") or "0").strip()
+    try:
+        length = int(raw_length)
+    except ValueError as exc:
+        raise ValueError("Content-Length must be an integer") from exc
+    if length < 0:
+        raise ValueError("Content-Length must be non-negative")
+    if length > MAX_JSON_BODY_BYTES:
+        raise ValueError(f"JSON body exceeds {MAX_JSON_BODY_BYTES} bytes")
+    raw_body = body_stream.read(length) if length else b"{}"
+    try:
+        body_text = (raw_body or b"{}").decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("JSON body must be valid UTF-8") from exc
+    payload = json.loads(body_text or "{}")
+    if not isinstance(payload, dict):
+        raise ValueError("JSON object is required")
+    return cast("dict[str, object]", payload)
+
+
 def render_page_html(
     path: str,
     registry: ActionRegistry,
@@ -4069,13 +5136,7 @@ def render_page_html(
             summary=payload["summary"],  # type: ignore[arg-type]
         )
     if path in {"/brain", "/brain/"}:
-        payload = autonomous_brain_payload(canonical_root)
-        return render_autonomous_records_html(
-            title="Autonomous Brain",
-            description="Canonical memory, knowledge packs, Hermes brain sources, Obsidian, and ops vault records.",
-            records=payload["items"],  # type: ignore[arg-type]
-            summary=payload["summary"],  # type: ignore[arg-type]
-        )
+        return render_brain_html(registry, canonical_root=canonical_root)
     if path in {"/hermes", "/hermes/"}:
         payload = autonomous_hermes_payload(canonical_root)
         return render_autonomous_records_html(
@@ -4194,7 +5255,7 @@ def serve(
                 self._json(git_status_summary())
                 return
             try:
-                autonomous_payload = autonomous_api_payload(path, registry=registry)
+                autonomous_payload = autonomous_api_payload(self.path, registry=registry)
             except ValueError as exc:
                 self._json({"error": str(exc)}, status=HTTPStatus.NOT_FOUND)
                 return
@@ -4205,13 +5266,18 @@ def serve(
 
         def do_POST(self) -> None:
             path = _request_path(self.path)
-            if path == "/api/autonomous/inbox":
-                length = int(self.headers.get("Content-Length", "0"))
-                raw_body = self.rfile.read(length) or b"{}"
+            if path == "/api/autonomous/brain":
                 try:
-                    payload = json.loads(raw_body)
-                    if not isinstance(payload, dict):
-                        raise ValueError("JSON object is required")
+                    payload = _read_json_body(self.headers, self.rfile)
+                    result = create_autonomous_brain_record(payload)
+                except (json.JSONDecodeError, ValueError) as exc:
+                    self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+                    return
+                self._json(result, status=HTTPStatus.CREATED)
+                return
+            if path == "/api/autonomous/inbox":
+                try:
+                    payload = _read_json_body(self.headers, self.rfile)
                     result = create_autonomous_inbox_record(payload)
                 except (json.JSONDecodeError, ValueError) as exc:
                     self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
@@ -4219,12 +5285,8 @@ def serve(
                 self._json(result, status=HTTPStatus.CREATED)
                 return
             if path == "/api/autonomous/brainstorming-trackio":
-                length = int(self.headers.get("Content-Length", "0"))
-                raw_body = self.rfile.read(length) or b"{}"
                 try:
-                    payload = json.loads(raw_body)
-                    if not isinstance(payload, dict):
-                        raise ValueError("JSON object is required")
+                    payload = _read_json_body(self.headers, self.rfile)
                     result = create_brainstorming_trackio_idea(payload)
                 except (json.JSONDecodeError, ValueError) as exc:
                     self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
@@ -4244,13 +5306,23 @@ def serve(
                     return
                 self._json(result, status=HTTPStatus.CREATED)
                 return
-            if path == "/api/autonomous/action-requests":
-                length = int(self.headers.get("Content-Length", "0"))
-                raw_body = self.rfile.read(length) or b"{}"
+            if path.startswith("/api/autonomous/brain/candidates/") and path.endswith(
+                "/promote"
+            ):
+                candidate_id = path.removeprefix(
+                    "/api/autonomous/brain/candidates/"
+                ).removesuffix("/promote")
                 try:
-                    payload = json.loads(raw_body)
-                    if not isinstance(payload, dict):
-                        raise ValueError("JSON object is required")
+                    payload = _read_json_body(self.headers, self.rfile)
+                    result = promote_autonomous_brain_candidate(candidate_id, payload)
+                except (json.JSONDecodeError, ValueError) as exc:
+                    self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+                    return
+                self._json(result, status=HTTPStatus.CREATED)
+                return
+            if path == "/api/autonomous/action-requests":
+                try:
+                    payload = _read_json_body(self.headers, self.rfile)
                     result = create_action_approval_request(payload, registry)
                 except (json.JSONDecodeError, ValueError, ActionRegistryError) as exc:
                     self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
@@ -4258,12 +5330,8 @@ def serve(
                 self._json(result, status=HTTPStatus.CREATED)
                 return
             if path == "/api/autonomous/os-cycle":
-                length = int(self.headers.get("Content-Length", "0"))
-                raw_body = self.rfile.read(length) or b"{}"
                 try:
-                    payload = json.loads(raw_body)
-                    if not isinstance(payload, dict):
-                        raise ValueError("JSON object is required")
+                    payload = _read_json_body(self.headers, self.rfile)
                     result = run_operating_cycle(payload, registry, runner)
                 except (json.JSONDecodeError, ValueError, ActionRegistryError) as exc:
                     self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
@@ -4276,12 +5344,8 @@ def serve(
                 request_id = path.removeprefix(
                     "/api/autonomous/action-requests/"
                 ).removesuffix("/decision")
-                length = int(self.headers.get("Content-Length", "0"))
-                raw_body = self.rfile.read(length) or b"{}"
                 try:
-                    payload = json.loads(raw_body)
-                    if not isinstance(payload, dict):
-                        raise ValueError("JSON object is required")
+                    payload = _read_json_body(self.headers, self.rfile)
                     result = decide_action_approval_request(
                         request_id,
                         decision=str(payload.get("decision") or ""),
@@ -4311,12 +5375,8 @@ def serve(
                 self._json(result)
                 return
             if path == "/api/autonomous/approvals":
-                length = int(self.headers.get("Content-Length", "0"))
-                raw_body = self.rfile.read(length) or b"{}"
                 try:
-                    payload = json.loads(raw_body)
-                    if not isinstance(payload, dict):
-                        raise ValueError("JSON object is required")
+                    payload = _read_json_body(self.headers, self.rfile)
                     result = update_autonomous_task_approval(
                         str(payload.get("task_id") or ""),
                         decision=str(payload.get("decision") or ""),
@@ -4331,8 +5391,11 @@ def serve(
             if path != "/api/run":
                 self.send_error(HTTPStatus.NOT_FOUND)
                 return
-            length = int(self.headers.get("Content-Length", "0"))
-            payload = json.loads(self.rfile.read(length) or b"{}")
+            try:
+                payload = _read_json_body(self.headers, self.rfile)
+            except (json.JSONDecodeError, ValueError) as exc:
+                self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+                return
             action_id = str(payload.get("id", ""))
             try:
                 result = runner.run(action_id)
@@ -4360,7 +5423,7 @@ def serve(
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            except BrokenPipeError, ConnectionResetError:
+            except (BrokenPipeError, ConnectionResetError):
                 return
 
         def _html(
@@ -4376,7 +5439,7 @@ def serve(
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            except BrokenPipeError, ConnectionResetError:
+            except (BrokenPipeError, ConnectionResetError):
                 return
 
     ThreadingHTTPServer((host, port), Handler).serve_forever()
