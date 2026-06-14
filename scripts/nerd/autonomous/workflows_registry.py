@@ -72,6 +72,17 @@ def build_workflows_registry(
             notes="Gateway-driven Hermes runtime events remain active through the generic NERD OS event bridge.",
         ),
         _workflow(
+            id="workflow-agency-request-to-delivery",
+            name="Agency Request to Delivery",
+            source="internal",
+            status="active",
+            trigger="manual_cli_or_runner_action",
+            last_run=None,
+            dry_run_available=True,
+            approval_required=False,
+            notes="Turns an operator request into inbox/task memory, brief, design, implementation, static landing artifact when applicable, deployment handoff, and run evidence.",
+        ),
+        _workflow(
             id="workflow-openwebui-seed-legacy",
             name="Open WebUI Seed Legacy",
             source="internal",
