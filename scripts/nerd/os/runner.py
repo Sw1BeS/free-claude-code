@@ -107,7 +107,8 @@ LOCAL_ADDRESS_PATTERN = re.compile(
     r"(?::\d+)?(?:/[^\s\"'<>]*)?"
 )
 LOCAL_PATH_PATTERN = re.compile(
-    r"\b(?:/root|/tmp|/home/[^/\s\"'<>]+)(?:/[^\s\"'<>]*)?"
+    r"(?:/root|/tmp|/home/[^/\s\"'<>]+|/var/(?:tmp|lib|log)|/etc)"
+    r"(?:/[^\s\"'<>]*)?"
 )
 SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
     r"\b(?P<key>token|api[_-]?key|apikey|access[_-]?token|refresh[_-]?token|"

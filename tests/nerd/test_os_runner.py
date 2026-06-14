@@ -1183,6 +1183,52 @@ def test_mission_control_payload_redacts_sensitive_agency_delivery_fields(tmp_pa
     assert "<redacted>" in serialized
 
 
+def test_mission_control_payload_redacts_local_paths_recursively(tmp_path):
+    registry_dir = tmp_path / "registry"
+    registry_dir.mkdir()
+    (registry_dir / "brain-memory.json").write_text(
+        json.dumps(
+            {
+                "items": [
+                    {
+                        "id": "brain-local-path-test",
+                        "name": "Local path probe",
+                        "status": "present",
+                        "detail": "/root/hermes/core/objectives.json",
+                        "notes": "Mirror /home/alice/private.env and /etc/nginx/nginx.conf",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (registry_dir / "runtime-integrations.json").write_text(
+        json.dumps(
+            {
+                "items": [
+                    {
+                        "id": "runtime-path-test",
+                        "name": "Runtime path probe",
+                        "status": "configured",
+                        "workspace": "/var/lib/nerd-os/state",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    mission = autonomous_mission_control_payload(tmp_path)
+    serialized = json.dumps(mission, ensure_ascii=False)
+
+    assert str(tmp_path) not in serialized
+    assert "/root/hermes" not in serialized
+    assert "/home/alice" not in serialized
+    assert "/etc/nginx" not in serialized
+    assert "/var/lib/nerd-os" not in serialized
+    assert "[local path]" in serialized
+
+
 def test_mission_control_v2_sections_reuse_registry_runs_and_actions(tmp_path):
     actions_path = tmp_path / "actions.yaml"
     write_actions(actions_path)
