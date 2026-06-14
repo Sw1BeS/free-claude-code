@@ -6,7 +6,7 @@ import json
 import re
 import subprocess
 import time
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -106,6 +106,20 @@ LOCAL_ADDRESS_PATTERN = re.compile(
     r"http://(?:127\.0\.0\.1|localhost|172\.20\.\d+\.\d+)"
     r"(?::\d+)?(?:/[^\s\"'<>]*)?"
 )
+LOCAL_PATH_PATTERN = re.compile(
+    r"\b(?:/root|/tmp|/home/[^/\s\"'<>]+)(?:/[^\s\"'<>]*)?"
+)
+SENSITIVE_ASSIGNMENT_PATTERN = re.compile(
+    r"\b(?P<key>token|api[_-]?key|apikey|access[_-]?token|refresh[_-]?token|"
+    r"secret|password|passwd|authorization|client[_-]?secret|private[_-]?key|"
+    r"credentials?|cookie|session[_-]?id)\s*[:=]\s*(?:Bearer\s+)?[^\s,;\"'<>]+",
+    re.IGNORECASE,
+)
+SENSITIVE_BEARER_PATTERN = re.compile(
+    r"\bBearer\s+[A-Za-z0-9._~+/=-]+",
+    re.IGNORECASE,
+)
+SENSITIVE_TOKEN_PATTERN = re.compile(r"\bsk-[A-Za-z0-9._-]+")
 SENSITIVE_KEY_PARTS = (
     "api_key",
     "apikey",
@@ -358,7 +372,14 @@ def public_service_links() -> list[dict[str, str]]:
 
 def _redact_local_addresses(value: object) -> object:
     if isinstance(value, str):
-        return LOCAL_ADDRESS_PATTERN.sub("[internal backend]", value)
+        redacted = LOCAL_ADDRESS_PATTERN.sub("[internal backend]", value)
+        redacted = LOCAL_PATH_PATTERN.sub("[local path]", redacted)
+        redacted = SENSITIVE_ASSIGNMENT_PATTERN.sub(
+            lambda match: f"{match.group('key')}=<redacted>",
+            redacted,
+        )
+        redacted = SENSITIVE_BEARER_PATTERN.sub("<redacted>", redacted)
+        return SENSITIVE_TOKEN_PATTERN.sub("<redacted>", redacted)
     if isinstance(value, list):
         return [_redact_local_addresses(item) for item in value]
     if isinstance(value, dict):
@@ -1300,6 +1321,191 @@ def _record_name(record: dict[str, object]) -> str:
     return str(record.get("name") or record.get("title") or record_id)
 
 
+AGENCY_DELIVERY_STATUSES = {
+    "success",
+    "partial",
+    "failed",
+    "blocked",
+    "dry_run",
+    "running",
+    "planned",
+    "unknown",
+}
+MAX_AGENCY_DELIVERY_RECORDS = 50
+MAX_AGENCY_DELIVERY_TEXT_CHARS = 240
+MAX_AGENCY_DELIVERY_TITLE_CHARS = 160
+MAX_AGENCY_DELIVERY_KEY_CHARS = 64
+AGENCY_DELIVERY_HIDDEN_VERIFICATION_KEY_PARTS = {
+    "path",
+    "file",
+    "artifact",
+    "url",
+}
+
+
+def _safe_jsonl_records(
+    path: Path,
+    *,
+    limit: int = MAX_AGENCY_DELIVERY_RECORDS,
+) -> list[dict[str, object]]:
+    if not path.is_file():
+        return []
+    records: deque[dict[str, object]] = deque(maxlen=limit)
+    try:
+        with path.open("r", encoding="utf-8") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    payload = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(payload, dict):
+                    records.append(cast("dict[str, object]", payload))
+    except OSError:
+        return []
+    return list(records)
+
+
+def _agency_delivery_run_records(
+    canonical_root: Path,
+    *,
+    limit: int = MAX_AGENCY_DELIVERY_RECORDS,
+) -> list[dict[str, object]]:
+    records = _safe_jsonl_records(
+        canonical_root / "memory" / "runs" / "agency-deliveries.jsonl",
+        limit=limit,
+    )
+    delivery_root = canonical_root / "artifacts" / "deliveries"
+    if delivery_root.is_dir():
+        for run_path in sorted(delivery_root.glob("*/run.json"))[-limit:]:
+            payload = _safe_read_json(run_path, {})
+            if isinstance(payload, dict):
+                records.append(cast("dict[str, object]", payload))
+    deduped: dict[str, dict[str, object]] = {}
+    for index, record in enumerate(records):
+        record_id = str(record.get("id") or f"agency_delivery_{index + 1}")
+        deduped[record_id] = record
+    return sorted(
+        deduped.values(),
+        key=lambda record: (
+            str(record.get("created_at") or record.get("timestamp") or ""),
+            str(record.get("id") or ""),
+        ),
+        reverse=True,
+    )[:limit]
+
+
+def _agency_delivery_status(value: object) -> str:
+    normalized = str(value or "").strip().lower().replace("-", "_")
+    aliases = {
+        "ok": "success",
+        "complete": "success",
+        "completed": "success",
+        "error": "failed",
+        "timed_out": "failed",
+        "dryrun": "dry_run",
+    }
+    normalized = aliases.get(normalized, normalized)
+    return normalized if normalized in AGENCY_DELIVERY_STATUSES else "unknown"
+
+
+def _delivery_title(record: dict[str, object], record_id: str) -> str:
+    for key in ("title", "summary", "name", "request"):
+        value = str(record.get(key) or "").strip()
+        if value:
+            return _delivery_text(
+                value.splitlines()[0],
+                max_chars=MAX_AGENCY_DELIVERY_TITLE_CHARS,
+            )
+    return record_id
+
+
+def _delivery_text(
+    value: object,
+    fallback: str = "",
+    *,
+    max_chars: int = MAX_AGENCY_DELIVERY_TEXT_CHARS,
+) -> str:
+    text = str(value or "").strip() or fallback
+    text = cast("str", _redact_local_addresses(text))
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars].rstrip() + "..."
+
+
+def _delivery_artifact_count(record: dict[str, object]) -> int:
+    artifacts = record.get("artifact_paths")
+    if isinstance(artifacts, list):
+        return len(artifacts)
+    try:
+        return max(0, int(record.get("artifact_count", 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _delivery_verification(record: dict[str, object]) -> dict[str, object]:
+    verification = record.get("verification")
+    if isinstance(verification, dict):
+        normalized = {
+            _delivery_text(key, max_chars=MAX_AGENCY_DELIVERY_KEY_CHARS): _delivery_text(value)
+            for key, value in verification.items()
+            if value is not None
+            and not isinstance(value, (dict, list))
+            and not any(
+                part
+                in re.sub(r"[^a-z0-9]+", "_", str(key).strip().lower()).strip("_")
+                for part in AGENCY_DELIVERY_HIDDEN_VERIFICATION_KEY_PARTS
+            )
+        }
+        return normalized or {"summary": "unknown"}
+    if verification is None:
+        return {"summary": "unknown"}
+    return {"summary": _delivery_text(verification)}
+
+
+def _normalize_agency_delivery(record: dict[str, object]) -> dict[str, object]:
+    redacted = cast("dict[str, object]", _redact_local_addresses(record))
+    record_id = str(redacted.get("id") or redacted.get("run_id") or "agency_delivery")
+    public_record: dict[str, object] = {
+        "id": _safe_identifier_part(record_id, fallback="agency_delivery"),
+        "title": _delivery_title(redacted, record_id),
+        "status": _agency_delivery_status(redacted.get("status")),
+        "risk": _delivery_text(redacted.get("risk"), "not_set", max_chars=48),
+        "mode": _delivery_text(redacted.get("mode"), "unknown", max_chars=48),
+        "task_id": _delivery_text(redacted.get("task_id"), max_chars=96),
+        "created_at": _delivery_text(
+            redacted.get("created_at") or redacted.get("timestamp"),
+            max_chars=64,
+        ),
+        "verification": _delivery_verification(redacted),
+        "artifact_count": _delivery_artifact_count(redacted),
+        "next_action": _delivery_text(redacted.get("next_action"), max_chars=160),
+    }
+    blocker = _delivery_text(redacted.get("blocker"), max_chars=180)
+    if blocker:
+        public_record["blocker"] = blocker
+    return public_record
+
+
+def autonomous_agency_deliveries_payload(
+    canonical_root: Path = DEFAULT_CANONICAL_ROOT,
+    *,
+    limit: int = MAX_AGENCY_DELIVERY_RECORDS,
+) -> dict[str, object]:
+    items = [
+        _normalize_agency_delivery(record)
+        for record in _agency_delivery_run_records(canonical_root, limit=limit)
+    ]
+    return {
+        "summary": {
+            "count": len(items),
+            "source": "agency_delivery_runs",
+        },
+        "items": items,
+    }
+
+
 def _mission_node(
     record: dict[str, object],
     *,
@@ -1655,6 +1861,7 @@ def autonomous_mission_control_payload(
         registry,
         canonical_root=canonical_root,
     )["items"]
+    agency_deliveries = autonomous_agency_deliveries_payload(canonical_root)["items"]
     trackio = brainstorming_trackio_payload(canonical_root)["items"]
     system_health = system_health_payload(canonical_root)["items"]
     queues = summary["queues"] if isinstance(summary.get("queues"), dict) else {}
@@ -1719,6 +1926,7 @@ def autonomous_mission_control_payload(
             "warnings": len(warnings),
             "action_console_items": len(action_console),
             "run_timeline_items": len(run_timeline),
+            "agency_delivery_items": len(agency_deliveries),
             "action_request_items": len(action_requests),
             "github_radar_items": len(github_radar),
             "observability_items": len(observability),
@@ -1731,6 +1939,7 @@ def autonomous_mission_control_payload(
             "tasks": tasks,
             "approvals": approvals,
             "action_requests": action_requests,
+            "agency_deliveries": agency_deliveries,
             "agents": agents,
             "brain": brain,
             "brain_store": brain_store,

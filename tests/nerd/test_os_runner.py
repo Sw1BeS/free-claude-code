@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 import subprocess
 import sys
 from email.message import Message
@@ -1042,6 +1043,7 @@ def test_autonomous_api_payload_maps_mission_control_and_registry_routes(tmp_pat
         "evidence_index",
         "domain_routes",
         "policy_matrix",
+        "agency_deliveries",
     ]:
         assert section in mission_payload["sections"]
     assert mission_payload["schema_version"] == "mission_control.v2"
@@ -1065,6 +1067,120 @@ def test_autonomous_api_payload_maps_mission_control_and_registry_routes(tmp_pat
     assert brain_detail is not None
     assert brain_detail["candidate"]["id"] == created_brain["candidate"]["id"]
     assert brain_detail["source"]["id"] == "source_operator"
+
+
+def test_mission_control_payload_exposes_agency_deliveries(tmp_path):
+    deliveries_path = tmp_path / "memory" / "runs" / "agency-deliveries.jsonl"
+    deliveries_path.parent.mkdir(parents=True)
+    records = [
+        {
+            "id": "agency_delivery_old_001",
+            "status": "mystery",
+            "request": "Historical delivery with sparse fields",
+        },
+        {
+            "id": "agency_delivery_test_001",
+            "title": "Создай лендос для агентства NERD",
+            "status": "partial",
+            "risk": "medium",
+            "mode": "landing_page",
+            "task_id": "task_test_001",
+            "created_at": "2026-06-14T10:00:00Z",
+            "verification": {
+                "html_smoke": "passed",
+                "browser_smoke": "blocked_missing_browser",
+            },
+            "artifact_paths": [
+                "/tmp/delivery/01-brief.md",
+                "/tmp/delivery/site/index.html",
+            ],
+            "next_action": "review_or_deploy",
+            "blocker": "Browser smoke is blocked until browser tooling is available.",
+        },
+    ]
+    deliveries_path.write_text(
+        "\n".join(json.dumps(record, ensure_ascii=False) for record in records)
+        + "\n{not-json}\n",
+        encoding="utf-8",
+    )
+
+    mission = autonomous_mission_control_payload(tmp_path)
+    deliveries = mission["sections"]["agency_deliveries"]
+
+    assert isinstance(deliveries, list)
+    by_id = {delivery["id"]: delivery for delivery in deliveries}
+    delivery = by_id["agency_delivery_test_001"]
+    assert delivery == {
+        "id": "agency_delivery_test_001",
+        "title": "Создай лендос для агентства NERD",
+        "status": "partial",
+        "risk": "medium",
+        "mode": "landing_page",
+        "task_id": "task_test_001",
+        "created_at": "2026-06-14T10:00:00Z",
+        "verification": {
+            "html_smoke": "passed",
+            "browser_smoke": "blocked_missing_browser",
+        },
+        "artifact_count": 2,
+        "next_action": "review_or_deploy",
+        "blocker": "Browser smoke is blocked until browser tooling is available.",
+    }
+    assert by_id["agency_delivery_old_001"]["status"] == "unknown"
+    assert by_id["agency_delivery_old_001"]["verification"] == {
+        "summary": "unknown"
+    }
+    assert "artifact_paths" not in delivery
+
+
+def test_mission_control_payload_redacts_sensitive_agency_delivery_fields(tmp_path):
+    deliveries_path = tmp_path / "memory" / "runs" / "agency-deliveries.jsonl"
+    deliveries_path.parent.mkdir(parents=True)
+    deliveries_path.write_text(
+        json.dumps(
+            {
+                "id": "agency_delivery_sensitive_001",
+                "title": "Sensitive delivery api_key: sk-live-secret password: hunter2",
+                "status": "success",
+                "mode": "landing_page",
+                "task_id": "task_sensitive_001",
+                "created_at": "2026-06-14T10:15:00Z",
+                "api_key": "sk-test-secret-value",
+                "authorization": "Bearer hidden-token",
+                "url": "http://127.0.0.1:9999/internal",
+                "password": "do-not-render",
+                "next_action": "rotate access_token=secret-next-token before deploy",
+                "blocker": "client_secret: sk-blocker-secret " + ("x" * 700),
+                "verification": {
+                    "html_smoke": "passed",
+                    "browser_smoke": "http://127.0.0.1:9999/internal",
+                    "token_probe": "api_key: sk-verify-secret",
+                    "verification_path": "/root/nerd-method/artifacts/deliveries/05-verification.md",
+                },
+                "artifact_paths": ["/tmp/delivery/run.json"],
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    mission = autonomous_mission_control_payload(tmp_path)
+    serialized = json.dumps(mission, ensure_ascii=False)
+
+    assert "sk-test-secret-value" not in serialized
+    assert "sk-live-secret" not in serialized
+    assert "hunter2" not in serialized
+    assert "Bearer hidden-token" not in serialized
+    assert "secret-next-token" not in serialized
+    assert "sk-blocker-secret" not in serialized
+    assert "sk-verify-secret" not in serialized
+    assert "do-not-render" not in serialized
+    assert "127.0.0.1:9999" not in serialized
+    assert "/root/nerd-method" not in serialized
+    assert "x" * 700 not in serialized
+    assert "[internal backend]" in serialized
+    assert "<redacted>" in serialized
 
 
 def test_mission_control_v2_sections_reuse_registry_runs_and_actions(tmp_path):
