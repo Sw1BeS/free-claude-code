@@ -1097,6 +1097,23 @@ def test_mission_control_payload_exposes_agency_deliveries(tmp_path):
             "next_action": "review_or_deploy",
             "blocker": "Browser smoke is blocked until browser tooling is available.",
         },
+        {
+            "id": "agency_delivery_success_with_blocked_verification",
+            "title": "Successful package with incomplete smoke",
+            "status": "success",
+            "verification": {
+                "html_smoke": "passed",
+                "browser_smoke": "not_run",
+            },
+        },
+        {
+            "id": "agency_delivery_success_with_failed_verification",
+            "title": "Successful package with failed smoke",
+            "status": "success",
+            "verification": {
+                "html_smoke": "failed",
+            },
+        },
     ]
     deliveries_path.write_text(
         "\n".join(json.dumps(record, ensure_ascii=False) for record in records)
@@ -1130,6 +1147,12 @@ def test_mission_control_payload_exposes_agency_deliveries(tmp_path):
     assert by_id["agency_delivery_old_001"]["verification"] == {
         "summary": "unknown"
     }
+    assert by_id["agency_delivery_success_with_blocked_verification"]["status"] == (
+        "partial"
+    )
+    assert by_id["agency_delivery_success_with_failed_verification"]["status"] == (
+        "failed"
+    )
     assert "artifact_paths" not in delivery
 
 

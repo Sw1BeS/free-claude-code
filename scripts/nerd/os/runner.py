@@ -1411,6 +1411,22 @@ def _agency_delivery_status(value: object) -> str:
     return normalized if normalized in AGENCY_DELIVERY_STATUSES else "unknown"
 
 
+def _agency_delivery_public_status(
+    value: object,
+    verification: dict[str, object],
+) -> str:
+    status = _agency_delivery_status(value)
+    verification_blob = " ".join(str(item).lower() for item in verification.values())
+    if any(term in verification_blob for term in ("failed", "error")):
+        return "failed"
+    if status == "success" and any(
+        term in verification_blob
+        for term in ("blocked", "missing", "not_run", "not run", "unknown")
+    ):
+        return "partial"
+    return status
+
+
 def _delivery_title(record: dict[str, object], record_id: str) -> str:
     for key in ("title", "summary", "name", "request"):
         value = str(record.get(key) or "").strip()
@@ -1468,10 +1484,11 @@ def _delivery_verification(record: dict[str, object]) -> dict[str, object]:
 def _normalize_agency_delivery(record: dict[str, object]) -> dict[str, object]:
     redacted = cast("dict[str, object]", _redact_local_addresses(record))
     record_id = str(redacted.get("id") or redacted.get("run_id") or "agency_delivery")
+    verification = _delivery_verification(redacted)
     public_record: dict[str, object] = {
         "id": _safe_identifier_part(record_id, fallback="agency_delivery"),
         "title": _delivery_title(redacted, record_id),
-        "status": _agency_delivery_status(redacted.get("status")),
+        "status": _agency_delivery_public_status(redacted.get("status"), verification),
         "risk": _delivery_text(redacted.get("risk"), "not_set", max_chars=48),
         "mode": _delivery_text(redacted.get("mode"), "unknown", max_chars=48),
         "task_id": _delivery_text(redacted.get("task_id"), max_chars=96),
@@ -1479,7 +1496,7 @@ def _normalize_agency_delivery(record: dict[str, object]) -> dict[str, object]:
             redacted.get("created_at") or redacted.get("timestamp"),
             max_chars=64,
         ),
-        "verification": _delivery_verification(redacted),
+        "verification": verification,
         "artifact_count": _delivery_artifact_count(redacted),
         "next_action": _delivery_text(redacted.get("next_action"), max_chars=160),
     }
