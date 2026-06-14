@@ -8,7 +8,10 @@ import json
 import math
 import os
 import re
+import shlex
+import shutil
 import struct
+import subprocess
 import sys
 import zlib
 from pathlib import Path
@@ -30,6 +33,26 @@ ENV_FILES = (
     Path("/root/.hermes/.env"),
     Path("/root/.hermes/hermes-agent/ops/hermes-evolution/env/core.env"),
 )
+BROWSER_ENV_NAMES = (
+    "NERD_BROWSER_COMMAND",
+    "NERD_BROWSER_BINARY",
+    "CHROME_PATH",
+)
+BROWSER_COMMAND_NAMES = (
+    "google-chrome",
+    "google-chrome-stable",
+    "chromium",
+    "chromium-browser",
+    "chrome",
+)
+BROWSER_FIXED_PATHS = (
+    Path("/opt/google/chrome/chrome"),
+    Path("/usr/bin/google-chrome"),
+    Path("/usr/bin/google-chrome-stable"),
+    Path("/usr/bin/chromium"),
+    Path("/usr/bin/chromium-browser"),
+)
+DEPLOYMENT_TARGETS_RELATIVE_PATH = Path("system/deployment-targets.json")
 SLUG_RE = re.compile(r"[^a-zA-Z0-9]+")
 LANDING_TERMS = (
     "landing",
@@ -716,6 +739,266 @@ def _verification_for(
     }
 
 
+def _playwright_browser_paths() -> list[Path]:
+    cache_root = Path.home() / ".cache" / "ms-playwright"
+    if not cache_root.is_dir():
+        return []
+    return sorted(cache_root.glob("chromium-*/chrome-linux*/chrome"), reverse=True)
+
+
+def _browser_command_from_value(value: str) -> list[str] | None:
+    parts = shlex.split(value)
+    if not parts:
+        return None
+    executable = parts[0]
+    resolved = shutil.which(executable)
+    if resolved:
+        return [resolved, *parts[1:]]
+    path = Path(executable).expanduser()
+    if path.is_file() and os.access(path, os.X_OK):
+        return [str(path), *parts[1:]]
+    return None
+
+
+def _discover_browser_command() -> list[str] | None:
+    for env_name in BROWSER_ENV_NAMES:
+        value = os.environ.get(env_name)
+        if not value:
+            continue
+        command = _browser_command_from_value(value)
+        if command:
+            return command
+        return None
+    for name in BROWSER_COMMAND_NAMES:
+        resolved = shutil.which(name)
+        if resolved:
+            return [resolved]
+    for path in [*BROWSER_FIXED_PATHS, *_playwright_browser_paths()]:
+        if path.is_file() and os.access(path, os.X_OK):
+            return [str(path)]
+    return None
+
+
+def _run_browser_smoke(site_path: Path | None, delivery_dir: Path) -> dict[str, object]:
+    if site_path is None:
+        return {"status": "not_applicable"}
+    browser_command = _discover_browser_command()
+    if not browser_command:
+        return {
+            "status": "blocked_missing_browser",
+            "blocker": "Browser smoke is blocked until browser tooling is available.",
+        }
+
+    screenshot_path = delivery_dir / "verification" / "browser-smoke.png"
+    screenshot_path.parent.mkdir(parents=True, exist_ok=True)
+    command = [
+        *browser_command,
+        "--headless=new",
+        "--disable-gpu",
+        "--no-sandbox",
+        "--hide-scrollbars",
+        f"--screenshot={screenshot_path}",
+        "--window-size=1366,900",
+        site_path.resolve().as_uri(),
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=site_path.parent,
+            timeout=30,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return {
+            "status": "blocked_missing_browser",
+            "blocker": "Browser smoke is blocked until browser tooling is available.",
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "status": "failed",
+            "blocker": "Browser smoke timed out while rendering the static artifact.",
+        }
+
+    if completed.returncode != 0:
+        stderr = _redact_sensitive_text((completed.stderr or completed.stdout).strip())
+        return {
+            "status": "failed",
+            "blocker": (
+                "Browser smoke failed while rendering the static artifact."
+                if not stderr
+                else f"Browser smoke failed while rendering the static artifact: {stderr[:180]}"
+            ),
+        }
+    if not screenshot_path.is_file() or screenshot_path.stat().st_size <= 0:
+        return {
+            "status": "failed",
+            "blocker": "Browser smoke did not produce a screenshot artifact.",
+        }
+    if not screenshot_path.read_bytes().startswith(b"\x89PNG\r\n\x1a\n"):
+        return {
+            "status": "failed",
+            "blocker": "Browser smoke screenshot is not a PNG artifact.",
+        }
+    return {
+        "status": "passed",
+        "artifact_path": screenshot_path,
+    }
+
+
+def _load_deployment_targets(canonical_root: Path) -> dict[str, object] | None:
+    targets_path = canonical_root / DEPLOYMENT_TARGETS_RELATIVE_PATH
+    if not targets_path.is_file():
+        return None
+    try:
+        payload = json.loads(targets_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {
+            "status": "invalid",
+            "reason": "Deployment target metadata is not valid JSON.",
+        }
+    return payload if isinstance(payload, dict) else {
+        "status": "invalid",
+        "reason": "Deployment target metadata must be a JSON object.",
+    }
+
+
+def _select_static_deployment_target(
+    metadata: dict[str, object] | None,
+) -> dict[str, object] | None:
+    if not metadata or metadata.get("status") == "invalid":
+        return None
+    targets = metadata.get("targets")
+    if not isinstance(targets, list):
+        return None
+    default_id = str(metadata.get("default_static_target") or "").strip()
+    normalized_targets = [
+        target
+        for target in targets
+        if isinstance(target, dict)
+        and str(target.get("artifact_kind") or "").strip() == "static_site"
+        and str(target.get("status") or "").strip() == "configured"
+    ]
+    if default_id:
+        for target in normalized_targets:
+            if str(target.get("id") or "").strip() == default_id:
+                return target
+    return normalized_targets[0] if normalized_targets else None
+
+
+def _deployment_for(
+    *,
+    canonical_root: Path,
+    site_path: Path | None,
+    run_id: str,
+    spec: dict[str, object],
+    auto_deploy: bool,
+) -> dict[str, object]:
+    if site_path is None:
+        return {
+            "status": "not_applicable",
+            "target": _redact_sensitive_text(str(spec.get("deployment_target") or "")),
+        }
+
+    metadata = _load_deployment_targets(canonical_root)
+    if isinstance(metadata, dict) and metadata.get("status") == "invalid":
+        return {
+            "status": "blocked_invalid_deployment_target",
+            "target": _redact_sensitive_text(str(spec.get("deployment_target") or "")),
+            "blocker": str(metadata.get("reason") or "Deployment target metadata is invalid."),
+        }
+
+    target = _select_static_deployment_target(metadata)
+    if target is None:
+        return {
+            "status": "deployment_ready",
+            "target": _redact_sensitive_text(str(spec.get("deployment_target") or "")),
+            "target_metadata": "missing",
+            "blocker": "Deployment target metadata is not configured.",
+        }
+
+    target_id = _slugify(str(target.get("id") or "static-target"), fallback="static-target")
+    provider = str(target.get("provider") or "unknown").strip()
+    credentials = str(target.get("credentials") or "not_configured").strip()
+    deployment: dict[str, object] = {
+        "status": "target_configured",
+        "target_id": target_id,
+        "provider": provider,
+        "credentials": credentials,
+    }
+    if not auto_deploy or target.get("auto_promote") is not True:
+        return deployment
+    if provider != "nginx_static":
+        return {
+            **deployment,
+            "status": "blocked_unsupported_provider",
+            "blocker": "Configured deployment target provider is not supported by local promotion.",
+        }
+    if credentials != "not_required":
+        return {
+            **deployment,
+            "status": "blocked_missing_credentials",
+            "blocker": "Configured deployment target requires credentials that are not available to this lane.",
+        }
+
+    raw_local_root = str(target.get("local_root") or "").strip()
+    public_base_url = str(target.get("public_base_url") or "").strip()
+    if not raw_local_root or not public_base_url:
+        return {
+            **deployment,
+            "status": "blocked_invalid_deployment_target",
+            "blocker": "Configured deployment target is missing local_root or public_base_url.",
+        }
+
+    local_root = Path(raw_local_root).expanduser()
+    destination = local_root / run_id
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        if destination.exists():
+            shutil.rmtree(destination)
+        shutil.copytree(site_path.parent, destination)
+        _make_static_tree_public_readable(destination)
+    except OSError as exc:
+        return {
+            **deployment,
+            "status": "failed",
+            "blocker": f"Static promotion failed: {_redact_sensitive_text(str(exc))[:180]}",
+        }
+
+    return {
+        **deployment,
+        "status": "deployed",
+        "public_url": f"{public_base_url.rstrip('/')}/{run_id}/",
+    }
+
+
+def _deploy_smoke_status(deployment: dict[str, object]) -> str:
+    status = str(deployment.get("status") or "").strip()
+    if status == "deployed":
+        return "passed"
+    if status == "not_applicable":
+        return "not_applicable"
+    if status == "target_configured":
+        return "not_run"
+    if status == "deployment_ready":
+        return "blocked_missing_deployment_target"
+    if status.startswith("blocked_"):
+        return status
+    if status == "failed":
+        return "failed"
+    return "unknown"
+
+
+def _make_static_tree_public_readable(root: Path) -> None:
+    root.chmod(0o755)
+    for path in root.rglob("*"):
+        if path.is_dir():
+            path.chmod(0o755)
+        else:
+            path.chmod(0o644)
+
+
 def run_delivery(
     request: str,
     *,
@@ -730,6 +1013,8 @@ def run_delivery(
     dry_run: bool = False,
     no_intake: bool = False,
     build_static_site: bool = True,
+    browser_smoke: bool = True,
+    auto_deploy: bool = False,
 ) -> dict[str, object]:
     request = request.strip()
     if not request:
@@ -785,6 +1070,7 @@ def run_delivery(
             ),
             "idempotency_key": idempotency_key,
             "next_action": "review_or_run",
+            "deployment": {"status": "planned"},
         }
 
     intake = None
@@ -820,14 +1106,54 @@ def run_delivery(
         artifact_paths=artifact_paths,
         static_site_expected=build_static_site,
     )
+    blocker = ""
+    browser_smoke_artifact = None
+    if browser_smoke and resolved_mode == "landing_page" and site_path:
+        browser_result = _run_browser_smoke(site_path, delivery_dir)
+        verification["browser_smoke"] = str(browser_result["status"])
+        if isinstance(browser_result.get("artifact_path"), Path):
+            browser_smoke_artifact = browser_result["artifact_path"]
+            artifact_paths.append(browser_smoke_artifact)
+        if browser_result.get("blocker"):
+            blocker = str(browser_result["blocker"])
+
+    run_id = f"agency_delivery_{stamp}_{slug}"
+    deployment = _deployment_for(
+        canonical_root=canonical_root,
+        site_path=site_path,
+        run_id=run_id,
+        spec=spec,
+        auto_deploy=auto_deploy,
+    )
+    verification["deploy_smoke"] = _deploy_smoke_status(deployment)
+    if not blocker and deployment.get("blocker"):
+        blocker = str(deployment["blocker"])
+
     status = "success"
     next_action = "review_or_deploy"
     if verification["html_smoke"] == "failed" or verification["asset_smoke"] == "failed":
         status = "partial"
         next_action = "fix_blocker"
+    elif verification["browser_smoke"] in {
+        "blocked_missing_browser",
+        "failed",
+    }:
+        status = "partial"
+        next_action = "configure_browser" if verification["browser_smoke"] == "blocked_missing_browser" else "fix_blocker"
+    elif verification["deploy_smoke"] == "passed":
+        next_action = "review_public_url"
+    elif verification["deploy_smoke"] in {
+        "blocked_missing_deployment_target",
+        "blocked_invalid_deployment_target",
+        "blocked_unsupported_provider",
+        "blocked_missing_credentials",
+    }:
+        next_action = "configure_deploy_target"
+    elif verification["deploy_smoke"] == "failed":
+        status = "partial"
+        next_action = "fix_blocker"
     elif resolved_mode == "landing_page" and not site_path:
         next_action = "review_artifacts"
-    run_id = f"agency_delivery_{stamp}_{slug}"
     run_record: dict[str, object] = {
         "id": run_id,
         "kind": "agency_delivery",
@@ -842,9 +1168,15 @@ def run_delivery(
         "artifact_paths": [str(path) for path in artifact_paths],
         "site_path": str(site_path) if site_path else None,
         "verification": verification,
+        "deployment_target": _redact_sensitive_text(str(spec.get("deployment_target") or "")),
+        "deployment": deployment,
         "idempotency_key": idempotency_key,
         "next_action": next_action,
     }
+    if blocker:
+        run_record["blocker"] = blocker
+    if browser_smoke_artifact:
+        run_record["browser_smoke_artifact"] = str(browser_smoke_artifact)
     run_path = write_json(delivery_dir / "run.json", run_record)
     artifact_paths.append(run_path)
     run_record["artifact_paths"] = [str(path) for path in artifact_paths]
@@ -884,6 +1216,7 @@ def run_delivery(
         "artifact_paths": [str(path) for path in artifact_paths],
         "model": model_status,
         "verification": run_record["verification"],
+        "deployment": run_record["deployment"],
         "idempotency_key": idempotency_key,
         "next_action": next_action,
         "intake": {
@@ -927,6 +1260,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--no-intake", action="store_true")
     parser.add_argument("--no-static-site", action="store_true")
+    parser.set_defaults(browser_smoke=True)
+    parser.add_argument("--browser-smoke", dest="browser_smoke", action="store_true")
+    parser.add_argument("--no-browser-smoke", dest="browser_smoke", action="store_false")
+    parser.set_defaults(auto_deploy=False)
+    parser.add_argument("--auto-deploy", dest="auto_deploy", action="store_true")
+    parser.add_argument("--no-auto-deploy", dest="auto_deploy", action="store_false")
     args = parser.parse_args(argv)
 
     result = run_delivery(
@@ -942,6 +1281,8 @@ def main(argv: list[str] | None = None) -> int:
         dry_run=args.dry_run,
         no_intake=args.no_intake,
         build_static_site=not args.no_static_site,
+        browser_smoke=args.browser_smoke,
+        auto_deploy=args.auto_deploy,
     )
     sys.stdout.write(to_pretty_json(result))
     return 0

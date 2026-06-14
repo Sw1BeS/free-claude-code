@@ -11,10 +11,10 @@ from typing import cast
 import pytest
 
 from scripts.nerd.os.runner import (
+    MAX_JSON_BODY_BYTES,
     ActionRegistry,
     ActionRunner,
     DisabledActionError,
-    MAX_JSON_BODY_BYTES,
     _read_json_body,
     action_summary,
     autonomous_action_console_payload,
@@ -36,15 +36,15 @@ from scripts.nerd.os.runner import (
     autonomous_updates_payload,
     autonomous_workflows_payload,
     create_action_approval_request,
-    create_autonomous_inbox_record,
     create_autonomous_brain_record,
+    create_autonomous_inbox_record,
     create_brainstorming_trackio_idea,
     decide_action_approval_request,
     execute_approved_action_request,
     git_status_summary,
     main,
-    promote_brainstorming_trackio_idea,
     promote_autonomous_brain_candidate,
+    promote_brainstorming_trackio_idea,
     public_service_links,
     read_recent_runs,
     render_blueprint_html,
@@ -1089,6 +1089,7 @@ def test_mission_control_payload_exposes_agency_deliveries(tmp_path):
             "verification": {
                 "html_smoke": "passed",
                 "browser_smoke": "blocked_missing_browser",
+                "deploy_smoke": "blocked_missing_deployment_target",
             },
             "artifact_paths": [
                 "/tmp/delivery/01-brief.md",
@@ -1138,6 +1139,7 @@ def test_mission_control_payload_exposes_agency_deliveries(tmp_path):
         "verification": {
             "html_smoke": "passed",
             "browser_smoke": "blocked_missing_browser",
+            "deploy_smoke": "blocked_missing_deployment_target",
         },
         "artifact_count": 2,
         "next_action": "review_or_deploy",
