@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import binascii
+import hashlib
 import html
 import json
 import math
@@ -39,6 +40,16 @@ LANDING_TERMS = (
     "website",
     "сайт",
 )
+SECRET_ASSIGNMENT_RE = re.compile(
+    r"(?i)\b(api[_-]?key|authorization|password|secret|token)\s*[:=]\s*([^\s,;&]+)"
+)
+SECRET_TOKEN_RE = re.compile(r"(?i)\b(sk-[a-z0-9._-]+|bearer\s+[a-z0-9._~+/=-]+)")
+
+
+def _redact_sensitive_text(value: str) -> str:
+    redacted = SECRET_TOKEN_RE.sub("[REDACTED]", value)
+    redacted = SECRET_ASSIGNMENT_RE.sub(lambda match: f"{match.group(1)}=[REDACTED]", redacted)
+    return redacted
 
 
 def _slugify(value: str, fallback: str = "agency-request") -> str:
@@ -126,7 +137,7 @@ def _fallback_spec(request: str, mode: str) -> dict[str, object]:
         design_direction = [
             "Full-bleed generated hero image with text over the image",
             "Restrained operational layout, compact sections, 8px card radius",
-            "Warm neutral background, green system accents, coral conversion accents",
+            "NERD-OS Palette 3: obsidian base, emerald operations, dusty violet memory paths",
         ]
         implementation_steps = [
             "Create static responsive landing page package",
@@ -414,17 +425,17 @@ def write_generated_hero_png(path: Path, seed_text: str) -> None:
             nx = x / width
             ny = y / height
             wave = int(18 * math.sin((nx * 8.0) + (seed / 31.0)))
-            r = int(238 - 42 * ny + 18 * nx + wave)
-            g = int(232 - 25 * nx + 32 * ny)
-            b = int(214 + 22 * nx - 18 * ny)
+            r = int(8 + 18 * nx + 16 * ny + wave / 3)
+            g = int(11 + 24 * nx + 18 * ny)
+            b = int(17 + 38 * nx + 26 * ny)
             if (x - 720) ** 2 + (y - 150) ** 2 < 78_000:
-                r, g, b = 48, 111, 94
+                r, g, b = 34, 197, 94
             if (x - 250) ** 2 + (y - 400) ** 2 < 65_000:
-                r, g, b = 217, 79, 61
+                r, g, b = 109, 80, 182
             if 80 + (seed % 120) < x < 180 + (seed % 120) and 70 < y < 470:
-                r = min(255, r + 12)
-                g = max(0, g - 22)
-                b = max(0, b - 28)
+                r = min(255, r + 84)
+                g = min(255, g + 58)
+                b = min(255, b + 20)
             row.extend((max(0, min(255, r)), max(0, min(255, g)), max(0, min(255, b))))
         rows.append(b"\x00" + bytes(row))
     raw = b"".join(rows)
@@ -457,21 +468,26 @@ def _render_static_landing(spec: dict[str, object], site_dir: Path) -> Path:
   <title>{html.escape(str(spec["title"]))}</title>
   <style>
     :root {{
-      color-scheme: light;
-      --ink: #13201e;
-      --muted: #53615d;
-      --paper: #f6f0e6;
-      --line: #ded4c3;
-      --green: #2f6f5e;
-      --coral: #d94f3d;
-      --gold: #efc456;
+      color-scheme: dark;
+      --nerd-bg: #080B11;
+      --nerd-panel: #101722;
+      --nerd-panel-2: #151D2A;
+      --nerd-text: #F2F7F4;
+      --nerd-muted: #9CA8B6;
+      --nerd-line: #263241;
+      --nerd-emerald: #22C55E;
+      --nerd-violet: #6D50B6;
+      --nerd-amber: #EAB308;
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }}
     * {{ box-sizing: border-box; }}
     body {{
       margin: 0;
-      background: var(--paper);
-      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(34,197,94,.16), transparent 32%),
+        radial-gradient(circle at 76% 18%, rgba(109,80,182,.18), transparent 30%),
+        var(--nerd-bg);
+      color: var(--nerd-text);
     }}
     .hero {{
       min-height: 88vh;
@@ -492,20 +508,20 @@ def _render_static_landing(spec: dict[str, object], site_dir: Path) -> Path:
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(90deg, rgba(19,32,30,.92), rgba(19,32,30,.58) 52%, rgba(19,32,30,.08));
+      background: linear-gradient(90deg, rgba(8,11,17,.96), rgba(8,11,17,.68) 52%, rgba(8,11,17,.22));
     }}
     .hero-content {{
       position: relative;
       z-index: 1;
       max-width: 760px;
       padding-bottom: 42px;
-      color: #fffaf0;
+      color: var(--nerd-text);
     }}
     .eyebrow {{
       text-transform: uppercase;
       font-size: 13px;
       letter-spacing: 0;
-      color: var(--gold);
+      color: var(--nerd-emerald);
       font-weight: 700;
     }}
     h1 {{
@@ -533,8 +549,8 @@ def _render_static_landing(spec: dict[str, object], site_dir: Path) -> Path:
       min-height: 44px;
       padding: 0 18px;
       border-radius: 8px;
-      background: var(--coral);
-      color: white;
+      background: var(--nerd-emerald);
+      color: #06100A;
       text-decoration: none;
       font-weight: 700;
     }}
@@ -556,19 +572,19 @@ def _render_static_landing(spec: dict[str, object], site_dir: Path) -> Path:
     }}
     article {{
       min-height: 144px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--nerd-line);
       border-radius: 8px;
       padding: 18px;
-      background: rgba(255,255,255,.48);
+      background: linear-gradient(180deg, rgba(21,29,42,.92), rgba(16,23,34,.82));
     }}
     article span {{
-      color: var(--green);
+      color: var(--nerd-emerald);
       font-weight: 800;
       font-size: 13px;
     }}
     article p {{
       margin: 20px 0 0;
-      color: var(--ink);
+      color: var(--nerd-text);
       line-height: 1.45;
     }}
     .proof {{
@@ -586,11 +602,11 @@ def _render_static_landing(spec: dict[str, object], site_dir: Path) -> Path:
     }}
     li {{
       margin: 10px 0;
-      color: var(--muted);
+      color: var(--nerd-muted);
       line-height: 1.45;
     }}
     .panel {{
-      border-left: 4px solid var(--green);
+      border-left: 4px solid var(--nerd-violet);
       padding: 4px 0 4px 18px;
     }}
     @media (max-width: 720px) {{
@@ -660,6 +676,46 @@ def _append_jsonl(path: Path, payload: dict[str, object]) -> None:
         handle.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
 
 
+def _idempotency_key(*, request: str, mode: str, source: str) -> str:
+    source_text = "\n".join([_redact_sensitive_text(request), mode, source])
+    return hashlib.sha256(source_text.encode("utf-8")).hexdigest()
+
+
+def _verification_for(
+    *,
+    mode: str,
+    site_path: Path | None,
+    artifact_paths: list[Path],
+    dry_run: bool = False,
+    static_site_expected: bool = True,
+) -> dict[str, str]:
+    if dry_run:
+        return {
+            "request_captured": "planned",
+            "artifacts_written": "planned",
+            "html_smoke": "planned"
+            if mode == "landing_page" and static_site_expected
+            else "not_applicable",
+            "asset_smoke": "planned"
+            if mode == "landing_page" and static_site_expected
+            else "not_applicable",
+            "browser_smoke": "not_run",
+        }
+    html_smoke = "not_applicable"
+    asset_smoke = "not_applicable"
+    if mode == "landing_page" and static_site_expected:
+        html_smoke = "passed" if site_path and site_path.is_file() else "failed"
+        hero_path = site_path.parent / "assets" / "hero.png" if site_path else None
+        asset_smoke = "passed" if hero_path and hero_path.is_file() else "failed"
+    return {
+        "request_captured": "passed",
+        "artifacts_written": "passed" if artifact_paths else "failed",
+        "html_smoke": html_smoke,
+        "asset_smoke": asset_smoke,
+        "browser_smoke": "not_run",
+    }
+
+
 def run_delivery(
     request: str,
     *,
@@ -678,15 +734,21 @@ def run_delivery(
     request = request.strip()
     if not request:
         raise ValueError("request text is required")
+    safe_request = _redact_sensitive_text(request)
     canonical_root = Path(canonical_root)
     output_root = Path(output_root) if output_root else canonical_root / "artifacts" / "deliveries"
-    resolved_mode = _detect_mode(request, mode)
+    resolved_mode = _detect_mode(safe_request, mode)
     stamp = record_stamp()
-    slug = _slugify(_first_line(request))
+    slug = _slugify(_first_line(safe_request))
     delivery_dir = output_root / f"{stamp}-{slug}"
+    idempotency_key = _idempotency_key(
+        request=safe_request,
+        mode=resolved_mode,
+        source=source,
+    )
 
     spec, model_status = build_delivery_spec(
-        request,
+        safe_request,
         mode=resolved_mode,
         model=model,
         base_url=base_url,
@@ -714,12 +776,21 @@ def run_delivery(
             "model": model_status,
             "spec": spec,
             "paths": planned_paths,
+            "verification": _verification_for(
+                mode=resolved_mode,
+                site_path=None,
+                artifact_paths=[],
+                dry_run=True,
+                static_site_expected=build_static_site,
+            ),
+            "idempotency_key": idempotency_key,
+            "next_action": "review_or_run",
         }
 
     intake = None
     if not no_intake:
         intake = write_brain_intake(
-            request,
+            safe_request,
             canonical_root=canonical_root,
             source=source,
         )
@@ -729,9 +800,9 @@ def run_delivery(
         site_path = _render_static_landing(spec, delivery_dir / "site")
 
     artifact_paths = [
-        _write_text(delivery_dir / "00-request.md", request),
-        _write_text(delivery_dir / "agency-prompt.md", _render_prompt(request, spec, resolved_mode)),
-        _write_text(delivery_dir / "01-brief.md", _render_brief(request, spec, model_status)),
+        _write_text(delivery_dir / "00-request.md", safe_request),
+        _write_text(delivery_dir / "agency-prompt.md", _render_prompt(safe_request, spec, resolved_mode)),
+        _write_text(delivery_dir / "01-brief.md", _render_brief(safe_request, spec, model_status)),
         _write_text(delivery_dir / "02-design.md", _render_design(spec)),
         _write_text(delivery_dir / "03-implementation-plan.md", _render_plan(spec)),
         _write_text(delivery_dir / "04-deployment.md", _render_deployment(spec, site_path)),
@@ -740,16 +811,29 @@ def run_delivery(
         artifact_paths.append(site_path)
         artifact_paths.append(site_path.parent / "assets" / "hero.png")
 
-    task_id = None
+    task_id = f"task_{stamp}"
     if isinstance(intake, dict) and isinstance(intake.get("task"), dict):
-        task_id = str(intake["task"].get("id") or "")
+        task_id = str(intake["task"].get("id") or task_id)
+    verification = _verification_for(
+        mode=resolved_mode,
+        site_path=site_path,
+        artifact_paths=artifact_paths,
+        static_site_expected=build_static_site,
+    )
+    status = "success"
+    next_action = "review_or_deploy"
+    if verification["html_smoke"] == "failed" or verification["asset_smoke"] == "failed":
+        status = "partial"
+        next_action = "fix_blocker"
+    elif resolved_mode == "landing_page" and not site_path:
+        next_action = "review_artifacts"
     run_id = f"agency_delivery_{stamp}_{slug}"
     run_record: dict[str, object] = {
         "id": run_id,
         "kind": "agency_delivery",
-        "status": "success",
+        "status": status,
         "created_at": iso_now(),
-        "request": request,
+        "request": safe_request,
         "mode": resolved_mode,
         "source": source,
         "task_id": task_id,
@@ -757,7 +841,9 @@ def run_delivery(
         "title": spec["title"],
         "artifact_paths": [str(path) for path in artifact_paths],
         "site_path": str(site_path) if site_path else None,
-        "next_action": "review_or_deploy",
+        "verification": verification,
+        "idempotency_key": idempotency_key,
+        "next_action": next_action,
     }
     run_path = write_json(delivery_dir / "run.json", run_record)
     artifact_paths.append(run_path)
@@ -769,7 +855,7 @@ def run_delivery(
         text="\n".join(
             [
                 str(spec["title"]),
-                request,
+                safe_request,
                 "Artifacts:",
                 *[str(path) for path in artifact_paths],
             ]
@@ -789,13 +875,17 @@ def run_delivery(
     )
 
     return {
-        "status": "success",
+        "status": status,
         "mode": resolved_mode,
         "run_id": run_id,
+        "task_id": task_id,
         "title": spec["title"],
         "paths": {**planned_paths, "run": str(run_path)},
         "artifact_paths": [str(path) for path in artifact_paths],
         "model": model_status,
+        "verification": run_record["verification"],
+        "idempotency_key": idempotency_key,
+        "next_action": next_action,
         "intake": {
             "inbox_path": str(intake["paths"]["inbox"]) if intake else None,
             "task_path": str(intake["paths"]["task"]) if intake else None,
