@@ -498,7 +498,7 @@ async function apply() {
   await load();
   showMessage(
     pending.length
-      ? `Applied. Restart fcc-server to use: ${pending.join(", ")}`
+      ? `Applied. Restart the proxy to use: ${pending.join(", ")}`
       : "Applied",
     "ok",
   );

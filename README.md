@@ -108,7 +108,7 @@ Need an NVIDIA NIM API key? Use the **[NVIDIA NIM provider](#nvidia-nim-provider
 
 Paste your NVIDIA NIM API key into `NVIDIA_NIM_API_KEY`, then click **Validate** and **Apply**.
 
-The default model is already set to `nvidia_nim/z-ai/glm4.7`. You can change it later from the same Admin UI.
+The default model is already set to `nvidia_nim/moonshotai/kimi-k2.6`. You can change it later from the same Admin UI.
 
 ### 6. Run Claude Code
 
@@ -128,14 +128,14 @@ Pick one provider, enter its key or local URL in the Admin UI, and set `MODEL` t
 
 Get a key at [build.nvidia.com/settings/api-keys](https://build.nvidia.com/settings/api-keys).
 
-In the Admin UI, paste it into `NVIDIA_NIM_API_KEY`. The default `MODEL` is `nvidia_nim/z-ai/glm4.7`.
+In the Admin UI, paste it into `NVIDIA_NIM_API_KEY`. The default `MODEL` is `nvidia_nim/moonshotai/kimi-k2.6`.
 
 Popular examples:
 
-- `nvidia_nim/z-ai/glm4.7`
-- `nvidia_nim/z-ai/glm5`
-- `nvidia_nim/moonshotai/kimi-k2.5`
-- `nvidia_nim/minimaxai/minimax-m2.5`
+- `nvidia_nim/moonshotai/kimi-k2.6`
+- `nvidia_nim/z-ai/glm-5.1`
+- `nvidia_nim/minimaxai/minimax-m2.7`
+- `nvidia_nim/deepseek-ai/deepseek-v4-pro`
 
 Browse models at [build.nvidia.com](https://build.nvidia.com/explore/discover).
 
@@ -241,7 +241,7 @@ Browse models at [Z.ai](https://z.ai).
 
 Each model tier can use a different provider by setting `MODEL_OPUS`, `MODEL_SONNET`, and `MODEL_HAIKU` in the Admin UI. Leave a tier blank to inherit `MODEL`.
 
-For example, you can route Opus to `nvidia_nim/moonshotai/kimi-k2.5`, Sonnet to `open_router/deepseek/deepseek-r1-0528:free`, Haiku to `lmstudio/unsloth/GLM-4.7-Flash-GGUF`, and keep the fallback `MODEL` on `zai/glm-5.1`.
+For example, you can route Opus to `nvidia_nim/moonshotai/kimi-k2.6`, Sonnet to `open_router/deepseek/deepseek-r1-0528:free`, Haiku to `lmstudio/local-coding-model`, and keep the fallback `MODEL` on `zai/glm-5.1`.
 
 ## Connect Claude Code
 
@@ -253,7 +253,7 @@ For terminal use, prefer the installed launcher:
 fcc-claude
 ```
 
-Keep `fcc-server` running while you work. The Admin UI manages proxy config, restarts the server when runtime settings change, and `fcc-claude` reads the current Admin UI-managed port and auth token every time it starts. It also sets `CLAUDE_CODE_AUTO_COMPACT_WINDOW` to `190000` for auto-compaction.
+Keep the proxy running while you work. The Admin UI manages proxy config, restarts the server when runtime settings change, and `fcc-claude` reads the current Admin UI-managed port and auth token every time it starts. It also sets `CLAUDE_CODE_AUTO_COMPACT_WINDOW` to `190000` for auto-compaction.
 
 ### 2. VS Code Extension
 

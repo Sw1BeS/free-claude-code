@@ -3,10 +3,12 @@
 ## Ownership
 
 - Upstream ClaudeCore: `https://github.com/Alishahryar1/free-claude-code`
-- Legacy deployment: `/root/free-claude-code`
-- Staged deployment: `/root/nerd-claude-free-staging`
+- Canonical deployment: `/root/nerd-claude-free-staging`
+- Legacy rollback deployment: `/root/free-claude-code`
 - Staged branch: `nerd/safe-upgrade`
 - Managed config: `/root/.fcc/.env`
+- Canonical model: `MODEL=nvidia_nim/moonshotai/kimi-k2.6`
+- Canonical launcher: `/root/.local/bin/free-claude` -> `/root/nerd-claude-free-staging/scripts/nerd/free-claude`
 
 ## Daily Commands
 
@@ -21,11 +23,13 @@ free-claude legacy
 The Admin UI includes a **NERD Stack** tab with generated inventory reports,
 CMS/commerce candidates, and the local Mac setup notes.
 
-## Staged Proxy
+## Canonical Proxy
 
-The staged proxy binds to `127.0.0.1:18082` by default. The legacy proxy remains on `8082` until a manual final switch is approved.
+The canonical proxy binds to `127.0.0.1:18082` by default. Agents and operators should call `free-claude`, `free-claude status`, or `free-claude ui`; raw `fcc-server` remains a package entrypoint and an internal process command, not the agency-facing launcher.
 
-Check staged health:
+The legacy proxy remains on `8082` as a rollback target. Do not route new agency automation to `/root/free-claude-code`; use `free-claude legacy` only when deliberately checking rollback health.
+
+Check canonical health:
 
 ```bash
 curl -fsS http://127.0.0.1:18082/health
@@ -41,7 +45,11 @@ curl -fsS http://127.0.0.1:8082/health
 
 Provider keys live only in `/root/.fcc/.env` or process environment. Do not commit `.env` files. Keys shared in chat should be rotated before durable production use.
 
-## Final Switch
+## Promotion State
+
+As of the canonical promotion, `/root/nerd-claude-free-staging` is the active Free Claude Code adapter for NERD agents. `/root/free-claude-code` is retained, not retired, because it provides a known rollback endpoint while the promoted wrapper soaks under Mission Control and delivery workloads. Retire legacy only after a separate port-move window and a clean update-cadence report.
+
+## Final Port Switch
 
 The final switch to port `8082` is not automatic. Before switching, all staged checks must pass:
 
@@ -56,7 +64,7 @@ curl -fsS http://127.0.0.1:18082/health
 curl -fsS http://127.0.0.1:8082/health
 ```
 
-After a separate approval, stop the legacy process, change `/root/.fcc/.env` `PORT` from `18082` to `8082`, and start `free-claude ui`. Keep `/root/free-claude-code` available for rollback.
+After a separate approval, stop the legacy process, change `/root/.fcc/.env` `PORT` from `18082` to `8082`, and start `free-claude ui`. Keep `/root/free-claude-code` available for rollback until the next update-cadence report explicitly retires it.
 
 ### Final Switch Checklist
 
