@@ -36,6 +36,7 @@ from scripts.nerd.os.runner import (
     autonomous_updates_payload,
     autonomous_workflows_payload,
     create_action_approval_request,
+    create_agency_delivery,
     create_autonomous_brain_record,
     create_autonomous_inbox_record,
     create_brainstorming_trackio_idea,
@@ -1408,6 +1409,53 @@ def test_create_autonomous_inbox_record_writes_inbox_and_task(tmp_path):
     assert autonomous_summary(tmp_path)["queues"]["inbox_count"] == 1
     assert autonomous_summary(tmp_path)["queues"]["task_count"] == 1
     assert autonomous_summary(tmp_path)["queues"]["artifact_count"] == 1
+
+
+def test_create_agency_delivery_runs_delivery_and_writes_evidence(tmp_path):
+    result = create_agency_delivery(
+        {
+            "text": "Create a landing page for the NERD OS execution desk.",
+            "source": "operator",
+            "mode": "landing_page",
+            "browser_smoke": False,
+            "auto_deploy": False,
+        },
+        canonical_root=tmp_path,
+    )
+
+    delivery = result["delivery"]
+    assert delivery["status"] in {"success", "partial"}
+    assert delivery["mode"] == "landing_page"
+    assert delivery["task_id"]
+    assert Path(delivery["paths"]["run"]).is_file()
+    assert Path(delivery["paths"]["site"]).is_file()
+    assert len(delivery["artifact_paths"]) >= 6
+    assert result["summary"]["queues"]["task_count"] == 1
+    assert (tmp_path / "memory" / "runs" / "agency-deliveries.jsonl").is_file()
+
+
+def test_create_agency_delivery_can_attach_to_existing_task(tmp_path):
+    task = create_autonomous_inbox_record(
+        {"text": "Build task execution binding.", "source": "operator"},
+        canonical_root=tmp_path,
+    )["task"]
+
+    result = create_agency_delivery(
+        {
+            "text": "Build task execution binding.",
+            "source": f"task:{task['id']}",
+            "task_id": task["id"],
+            "mode": "implementation",
+            "browser_smoke": False,
+            "auto_deploy": False,
+        },
+        canonical_root=tmp_path,
+    )
+
+    assert result["delivery"]["task_id"] == task["id"]
+    assert result["summary"]["queues"]["task_count"] == 1
+    run_record = json.loads(Path(result["delivery"]["paths"]["run"]).read_text())
+    assert run_record["task_id"] == task["id"]
 
 
 def test_read_json_body_rejects_malformed_or_oversized_content_length():

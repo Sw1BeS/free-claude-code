@@ -22,6 +22,11 @@ from scripts.nerd.autonomous.intake import (
     record_stamp,
     write_brain_intake,
 )
+from scripts.nerd.autonomous.agency_delivery import (
+    DEFAULT_LITELLM_BASE_URL as AGENCY_DEFAULT_LITELLM_BASE_URL,
+    DEFAULT_MODEL as AGENCY_DEFAULT_MODEL,
+    run_delivery as run_agency_delivery,
+)
 from scripts.nerd.autonomous.models import ApprovalRecord, write_json
 from scripts.nerd.brain.store import (
     brain_candidate_detail,
@@ -2215,6 +2220,70 @@ def create_autonomous_brain_record(
     )
     result["brain_store"] = build_brain_store_snapshot(canonical_root)
     return result
+
+
+def _payload_bool(payload: dict[str, object], key: str, default: bool) -> bool:
+    value = payload.get(key)
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
+def create_agency_delivery(
+    payload: dict[str, object],
+    *,
+    canonical_root: Path = DEFAULT_CANONICAL_ROOT,
+) -> dict[str, object]:
+    request = str(
+        payload.get("text") or payload.get("request") or payload.get("message") or ""
+    ).strip()
+    if not request:
+        raise ValueError("text is required")
+    mode = str(payload.get("mode") or "auto").strip() or "auto"
+    if mode not in {"auto", "landing_page", "implementation"}:
+        raise ValueError("mode must be auto, landing_page, or implementation")
+    source = str(payload.get("source") or "operator").strip() or "operator"
+    try:
+        timeout_seconds = float(payload.get("timeout_seconds") or 90.0)
+    except (TypeError, ValueError) as exc:
+        raise ValueError("timeout_seconds must be a number") from exc
+    if timeout_seconds < 5 or timeout_seconds > 300:
+        raise ValueError("timeout_seconds must be between 5 and 300")
+
+    output_root = None
+    raw_output_root = str(payload.get("output_root") or "").strip()
+    if raw_output_root:
+        output_root = Path(raw_output_root)
+    task_id = str(payload.get("task_id") or "").strip()
+    no_static_site = _payload_bool(payload, "no_static_site", False)
+    delivery = run_agency_delivery(
+        request,
+        canonical_root=canonical_root,
+        output_root=output_root,
+        source=source,
+        task_id=task_id or None,
+        mode=mode,
+        model=str(payload.get("model") or AGENCY_DEFAULT_MODEL),
+        base_url=str(payload.get("base_url") or AGENCY_DEFAULT_LITELLM_BASE_URL),
+        timeout_seconds=timeout_seconds,
+        offline=_payload_bool(payload, "offline", True),
+        dry_run=_payload_bool(payload, "dry_run", False),
+        no_intake=bool(task_id) or _payload_bool(payload, "no_intake", False),
+        build_static_site=not no_static_site
+        and _payload_bool(payload, "build_static_site", True),
+        browser_smoke=_payload_bool(payload, "browser_smoke", True),
+        auto_deploy=_payload_bool(payload, "auto_deploy", False),
+    )
+    return {
+        "delivery": delivery,
+        "summary": autonomous_summary(canonical_root),
+    }
 
 
 def promote_autonomous_brain_candidate(
@@ -5493,6 +5562,15 @@ def serve(
 
         def do_POST(self) -> None:
             path = _request_path(self.path)
+            if path == "/api/autonomous/agency-delivery":
+                try:
+                    payload = _read_json_body(self.headers, self.rfile)
+                    result = create_agency_delivery(payload)
+                except (json.JSONDecodeError, ValueError) as exc:
+                    self._json({"error": str(exc)}, status=HTTPStatus.BAD_REQUEST)
+                    return
+                self._json(result, status=HTTPStatus.CREATED)
+                return
             if path == "/api/autonomous/brain":
                 try:
                     payload = _read_json_body(self.headers, self.rfile)

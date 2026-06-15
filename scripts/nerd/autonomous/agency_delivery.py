@@ -1005,6 +1005,7 @@ def run_delivery(
     canonical_root: Path = DEFAULT_CANONICAL_ROOT,
     output_root: Path | None = None,
     source: str = "manual",
+    task_id: str | None = None,
     mode: str = "auto",
     model: str = DEFAULT_MODEL,
     base_url: str = DEFAULT_LITELLM_BASE_URL,
@@ -1020,6 +1021,11 @@ def run_delivery(
     if not request:
         raise ValueError("request text is required")
     safe_request = _redact_sensitive_text(request)
+    safe_task_id = (
+        re.sub(r"[^A-Za-z0-9_.:-]+", "_", task_id.strip())[:128]
+        if task_id and task_id.strip()
+        else ""
+    )
     canonical_root = Path(canonical_root)
     output_root = Path(output_root) if output_root else canonical_root / "artifacts" / "deliveries"
     resolved_mode = _detect_mode(safe_request, mode)
@@ -1058,6 +1064,9 @@ def run_delivery(
         return {
             "status": "dry_run",
             "mode": resolved_mode,
+            "run_id": f"agency_delivery_{stamp}_{slug}",
+            "task_id": safe_task_id or f"task_{stamp}",
+            "title": spec["title"],
             "model": model_status,
             "spec": spec,
             "paths": planned_paths,
@@ -1069,6 +1078,7 @@ def run_delivery(
                 static_site_expected=build_static_site,
             ),
             "idempotency_key": idempotency_key,
+            "artifact_paths": [],
             "next_action": "review_or_run",
             "deployment": {"status": "planned"},
         }
@@ -1097,9 +1107,9 @@ def run_delivery(
         artifact_paths.append(site_path)
         artifact_paths.append(site_path.parent / "assets" / "hero.png")
 
-    task_id = f"task_{stamp}"
+    task_id = safe_task_id or f"task_{stamp}"
     if isinstance(intake, dict) and isinstance(intake.get("task"), dict):
-        task_id = str(intake["task"].get("id") or task_id)
+        task_id = safe_task_id or str(intake["task"].get("id") or task_id)
     verification = _verification_for(
         mode=resolved_mode,
         site_path=site_path,
@@ -1246,6 +1256,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--canonical-root", type=Path, default=DEFAULT_CANONICAL_ROOT)
     parser.add_argument("--output-root", type=Path)
     parser.add_argument("--source", default="manual")
+    parser.add_argument("--task-id")
     parser.add_argument(
         "--mode",
         choices=("auto", "landing_page", "implementation"),
@@ -1273,6 +1284,7 @@ def main(argv: list[str] | None = None) -> int:
         canonical_root=args.canonical_root,
         output_root=args.output_root,
         source=args.source,
+        task_id=args.task_id,
         mode=args.mode,
         model=args.model,
         base_url=args.base_url,
